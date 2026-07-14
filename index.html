@@ -185,7 +185,7 @@ body {
 
 /* ====== Center Big Button ====== */
 .center-btn-area {
-  display: flex; justify-content: center; padding: 12px 0 8px;
+  display: flex; justify-content: center; padding: 12px 0 16px;
   z-index: 5; position: relative;
 }
 .big-draw-btn {
@@ -434,6 +434,16 @@ body {
           <input type="text" id="pullInput" placeholder="输入一个灵感..." maxlength="80">
           <button id="pullSubmit">✓</button>
         </div>
+        <div class="scatter-area" id="scatterArea">
+          <div class="empty-state" id="inspirationEmpty">
+            <div class="empty-emoji">🫙</div>
+            <div class="empty-text">
+              罐头还是空的<br>
+              长按这里录音，或下拉输入<br>
+              把有趣的念头丢进来吧
+            </div>
+          </div>
+        </div>
         <div class="center-btn-area">
           <button class="big-draw-btn inspiration-btn" id="drawBtn">
             🎲 抽一个灵感
@@ -445,16 +455,6 @@ body {
                    display: flex; align-items: center; justify-content: center;">
             📳
           </button>
-        </div>
-        <div class="scatter-area" id="scatterArea">
-          <div class="empty-state" id="inspirationEmpty">
-            <div class="empty-emoji">🫙</div>
-            <div class="empty-text">
-              罐头还是空的<br>
-              长按这里录音，或下拉输入<br>
-              把有趣的念头丢进来吧
-            </div>
-          </div>
         </div>
       </div>
 
