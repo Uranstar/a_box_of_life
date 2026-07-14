@@ -678,7 +678,35 @@ const AudioEngine = (() => {
         osc.start(c.currentTime); osc.stop(c.currentTime + 0.3);
       } catch(e) {}
     },
-    click: () => playTone(440, 0.05, 'square', 0.04, false),
+    click: () => {
+      // Gentle water drop sound
+      try {
+        const c = getCtx();
+        const now = c.currentTime;
+
+        // Main drop: sine wave dropping from high to low
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.12);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain); gain.connect(c.destination);
+        osc.start(now); osc.stop(now + 0.15);
+
+        // Tiny ripple: second harmonic
+        const osc2 = c.createOscillator();
+        const gain2 = c.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1400, now + 0.04);
+        osc2.frequency.exponentialRampToValueAtTime(600, now + 0.14);
+        gain2.gain.setValueAtTime(0.03, now + 0.04);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc2.connect(gain2); gain2.connect(c.destination);
+        osc2.start(now + 0.04); osc2.stop(now + 0.18);
+      } catch(e) {}
+    },
     pop: () => { playTone(600, 0.08, 'sine', 0.1); setTimeout(() => playTone(900, 0.06, 'sine', 0.06), 40); },
     success: () => {
       playTone(523, 0.12, 'sine', 0.1);
@@ -1461,7 +1489,7 @@ const UIController = {
   },
 
   addInspirationByVoice() {
-    // Try Web Speech API
+    // Try Web Speech API first
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -1475,20 +1503,53 @@ const UIController = {
           this.addInspirationByText(text);
           this.showFloatingText('听到啦！✨');
         }
+        this._stopVoiceRecording();
       };
       recognition.onerror = () => {
-        // Fallback: show text input prompt
+        this._stopVoiceRecording();
         this._showVoiceFallbackInput();
       };
-      recognition.onend = () => {};
+      recognition.onend = () => {
+        this._stopVoiceRecording();
+      };
     } else {
-      // Fallback: show text input prompt
+      this._stopVoiceRecording();
       this._showVoiceFallbackInput();
     }
   },
 
+  _voiceRecorder: null,
+  _voiceStream: null,
+  _voiceChunks: [],
+
+  async _startVoiceRecording() {
+    this._voiceChunks = [];
+    try {
+      this._voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this._voiceRecorder = new MediaRecorder(this._voiceStream);
+      this._voiceRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) this._voiceChunks.push(e.data);
+      };
+      this._voiceRecorder.start();
+    } catch(e) {
+      // Mic not available, will fall back to prompt on release
+      this._voiceStream = null;
+      this._voiceRecorder = null;
+    }
+  },
+
+  _stopVoiceRecording() {
+    if (this._voiceRecorder && this._voiceRecorder.state === 'recording') {
+      this._voiceRecorder.stop();
+    }
+    if (this._voiceStream) {
+      this._voiceStream.getTracks().forEach(t => t.stop());
+      this._voiceStream = null;
+      this._voiceRecorder = null;
+    }
+  },
+
   _showVoiceFallbackInput() {
-    // Show a quick text input prompt
     const text = prompt('💡 说说你的灵感吧（语音识别需要 HTTPS 环境）：', '');
     if (text && text.trim()) {
       this.addInspirationByText(text.trim());
@@ -1881,6 +1942,7 @@ const UIController = {
         document.getElementById('recordingOverlay').classList.add('active');
         AudioEngine.click();
         VibrationEngine.cardTapVibe();
+        this._startVoiceRecording();
       }, 500);
     });
 
@@ -1897,6 +1959,7 @@ const UIController = {
       clearTimeout(longPressTimer);
       if (isLongPress) {
         document.getElementById('recordingOverlay').classList.remove('active');
+        this._stopVoiceRecording();
         isLongPress = false;
       }
     });
@@ -1909,6 +1972,7 @@ const UIController = {
         document.getElementById('recordingOverlay').classList.add('active');
         AudioEngine.click();
         VibrationEngine.cardTapVibe();
+        this._startVoiceRecording();
       }, 500);
     });
     inspEmpty.addEventListener('pointerup', () => {
@@ -1923,6 +1987,7 @@ const UIController = {
       clearTimeout(longPressTimer);
       if (isLongPress) {
         document.getElementById('recordingOverlay').classList.remove('active');
+        this._stopVoiceRecording();
         isLongPress = false;
       }
     });
