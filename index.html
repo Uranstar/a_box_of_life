@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>念头罐头</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<style>
+/* ====== Base & Reset ====== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #FFF8F0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+/* ====== App Shell ====== */
+#app {
+  width: 100%; height: 100%;
+  max-width: 480px; margin: 0 auto;
+  position: relative; display: flex; flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(180deg, #FFF5EE 0%, #FFF8F0 30%, #FFF0E5 100%);
+}
+
+/* ====== Header ====== */
+.app-header {
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 20px 8px;
+  text-align: center;
+  z-index: 10;
+  position: relative;
+}
+.app-header h1 {
+  font-size: 22px; font-weight: 700;
+  color: #4A3728;
+  letter-spacing: 0.02em;
+}
+.app-header .subtitle {
+  font-size: 12px; color: #B8A59A;
+  margin-top: 2px;
+}
+
+/* ====== Views Container ====== */
+.views-wrapper {
+  flex: 1; position: relative; overflow: hidden;
+}
+.views-slider {
+  display: flex; width: 200%; height: 100%;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.views-slider.in-action { transform: translateX(-50%); }
+.view {
+  width: 50%; height: 100%;
+  position: relative; display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ====== Pull-down Input Bar ====== */
+.pull-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  height: 56px; background: #FFFFFF;
+  display: flex; align-items: center; padding: 0 16px;
+  transform: translateY(-100%);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border-radius: 0 0 20px 20px;
+}
+.pull-bar.visible { transform: translateY(0); }
+.pull-bar input {
+  flex: 1; border: none; outline: none; font-size: 16px;
+  background: #F5F0EB; border-radius: 20px; padding: 10px 16px;
+  color: #4A3728;
+}
+.pull-bar input::placeholder { color: #C4B5A8; }
+.pull-bar button {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: #FF8C69; color: #fff; font-size: 18px;
+  margin-left: 8px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
+}
+.pull-bar button:active { transform: scale(0.9); }
+.pull-hint {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: #C4B5A8; z-index: 5;
+  pointer-events: none; opacity: 0.7;
+}
+
+/* ====== Card Scatter Area (Inspiration) ====== */
+.scatter-area {
+  flex: 1; position: relative; min-height: 300px;
+  padding: 8px;
+}
+.scatter-card {
+  position: absolute; width: 130px; padding: 16px 14px;
+  border-radius: 18px; color: #fff;
+  font-size: 14px; font-weight: 600; line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+  cursor: pointer; transition: box-shadow 0.2s, filter 0.2s;
+  z-index: 1; word-break: break-word;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+}
+.scatter-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.14); z-index: 5; }
+.scatter-card:active { filter: brightness(0.92); }
+.scatter-card .card-actions {
+  display: flex; justify-content: flex-end; gap: 6px;
+  margin-top: 10px; opacity: 0; transition: opacity 0.2s;
+}
+.scatter-card:hover .card-actions,
+.scatter-card.selected .card-actions { opacity: 1; }
+.scatter-card .card-action-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.35); color: #fff;
+  font-size: 13px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+  backdrop-filter: blur(4px);
+}
+.scatter-card .card-action-btn:active { transform: scale(0.85); background: rgba(255,255,255,0.5); }
+
+/* Selected card overlay */
+.card-selected-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35); z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+}
+.card-selected-overlay.active { opacity: 1; pointer-events: auto; }
+
+/* ====== Action Switch Grid ====== */
+.action-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 14px; padding: 12px 16px 80px;
+}
+.action-card {
+  position: relative; border-radius: 20px; overflow: hidden;
+  aspect-ratio: 3/4; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: #f0e8e0;
+  display: flex; flex-direction: column;
+}
+.action-card:active { transform: scale(0.96); }
+.action-card .card-media {
+  flex: 1; background: #e8ddd3;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; color: #c4b5a8; overflow: hidden;
+}
+.action-card .card-media img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.action-card .card-info {
+  padding: 12px; background: #fff;
+}
+.action-card .card-info .instruction {
+  font-size: 13px; font-weight: 600; color: #4A3728;
+  line-height: 1.4;
+}
+.action-card .card-btn {
+  margin-top: 8px; width: 100%; padding: 10px;
+  border: none; border-radius: 14px;
+  background: linear-gradient(135deg, #FF8C69, #FF6B6B);
+  color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 3px 10px rgba(255,107,107,0.3);
+}
+.action-card .card-btn:active {
+  transform: scale(0.94); box-shadow: 0 1px 4px rgba(255,107,107,0.2);
+}
+
+/* ====== Center Big Button ====== */
+.center-btn-area {
+  display: flex; justify-content: center; padding: 12px 0 8px;
+  z-index: 5; position: relative;
+}
+.big-draw-btn {
+  padding: 18px 44px; border: none; border-radius: 50px;
+  font-size: 18px; font-weight: 700; color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.03em;
+}
+.big-draw-btn:active { transform: scale(0.93); box-shadow: 0 3px 12px rgba(0,0,0,0.10); }
+.big-draw-btn.inspiration-btn {
+  background: linear-gradient(135deg, #FF8C69, #FF6B6B);
+}
+.big-draw-btn.action-btn {
+  background: linear-gradient(135deg, #69DB7C, #38B2AC);
+}
+
+/* ====== Bottom Nav ====== */
+.bottom-nav {
+  display: flex; justify-content: center; gap: 40px;
+  padding: 12px 0 calc(20px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(0deg, rgba(255,248,240,0.98) 60%, rgba(255,248,240,0) 100%);
+  z-index: 10; position: relative;
+}
+.nav-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; cursor: pointer; transition: all 0.3s;
+  background: #f0e8e0; color: #b8a59a;
+  position: relative;
+}
+.nav-icon.active {
+  background: #fff;
+  color: #FF8C69;
+  box-shadow: 0 4px 16px rgba(255,140,105,0.25);
+}
+.nav-icon.active::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 3px solid rgba(255,140,105,0.3);
+  animation: breathe 2s ease-in-out infinite;
+}
+.nav-icon.action-active.active {
+  color: #38B2AC;
+  box-shadow: 0 4px 16px rgba(56,178,172,0.25);
+}
+.nav-icon.action-active.active::after {
+  border-color: rgba(56,178,172,0.3);
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.4; }
+}
+.nav-label {
+  font-size: 10px; color: #b8a59a; text-align: center; margin-top: 2px;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; }
+
+/* ====== Recording Overlay ====== */
+.recording-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.25s;
+}
+.recording-overlay.active { opacity: 1; pointer-events: auto; }
+.recording-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at center, rgba(255,140,105,0.15), rgba(0,0,0,0.5));
+}
+.recording-mic {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: linear-gradient(135deg, #FF8C69, #FF6B6B);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; z-index: 1; position: relative;
+  box-shadow: 0 0 0 0 rgba(255,140,105,0.5);
+  animation: micPulse 1.2s ease-out infinite;
+}
+@keyframes micPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,140,105,0.5); }
+  100% { box-shadow: 0 0 0 40px rgba(255,140,105,0); }
+}
+.recording-hint {
+  position: absolute; bottom: 25%; color: #fff;
+  font-size: 16px; font-weight: 600; z-index: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ====== Action Overlay ====== */
+.action-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0,0,0,0.75);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.35s;
+}
+.action-overlay.active { opacity: 1; pointer-events: auto; }
+.action-overlay .action-card-large {
+  width: 75%; max-width: 320px; padding: 32px 24px;
+  background: #fff; border-radius: 24px;
+  text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.action-overlay .action-card-large .big-emoji {
+  font-size: 56px; margin-bottom: 12px;
+}
+.action-overlay .action-card-large .big-instruction {
+  font-size: 22px; font-weight: 700; color: #4A3728;
+  line-height: 1.5; margin-bottom: 20px;
+}
+.action-overlay .action-do-btn {
+  padding: 16px 48px; border: none; border-radius: 50px;
+  font-size: 20px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, #69DB7C, #38B2AC);
+  cursor: pointer; box-shadow: 0 6px 24px rgba(56,178,172,0.35);
+  transition: transform 0.15s;
+}
+.action-overlay .action-do-btn:active { transform: scale(0.92); }
+.action-overlay .action-close {
+  margin-top: 16px; color: rgba(255,255,255,0.7); font-size: 14px;
+  cursor: pointer; background: none; border: none;
+}
+
+/* ====== Batch & Photo Confirm Modals ====== */
+.batch-modal {
+  position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  padding: 20px;
+}
+.batch-modal.active { opacity: 1; pointer-events: auto; }
+.batch-content {
+  background: #fff; border-radius: 20px; padding: 20px;
+  width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.photo-confirm-modal {
+  position: fixed; inset: 0; z-index: 75; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  padding: 20px;
+}
+.photo-confirm-modal.active { opacity: 1; pointer-events: auto; }
+.photo-confirm-content {
+  background: #fff; border-radius: 20px; padding: 20px;
+  width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+/* ====== Camera Modal ====== */
+.camera-modal {
+  position: fixed; inset: 0; z-index: 70;
+  background: #1a1a1a;
+  display: flex; flex-direction: column;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+}
+.camera-modal.active { opacity: 1; pointer-events: auto; }
+.camera-preview {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: #2a2a2a; position: relative; overflow: hidden;
+}
+.camera-preview video { width: 100%; height: 100%; object-fit: cover; }
+.camera-preview .placeholder {
+  font-size: 64px; color: #555; text-align: center;
+}
+.camera-controls {
+  display: flex; justify-content: center; align-items: center;
+  padding: 24px; gap: 20px;
+}
+.camera-capture-btn {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 4px solid #fff; background: rgba(255,255,255,0.2);
+  cursor: pointer; transition: transform 0.15s;
+}
+.camera-capture-btn:active { transform: scale(0.88); background: #fff; }
+.camera-close-btn {
+  color: #fff; background: none; border: none;
+  font-size: 16px; cursor: pointer; padding: 12px;
+}
+.camera-upload-btn {
+  color: #fff; background: rgba(255,255,255,0.15); border: none;
+  font-size: 14px; cursor: pointer; padding: 12px 20px; border-radius: 20px;
+}
+.camera-instruction-input {
+  position: absolute; bottom: 100px; left: 20px; right: 20px;
+  padding: 12px 16px; border-radius: 20px; border: none;
+  font-size: 15px; text-align: center; background: rgba(0,0,0,0.6);
+  color: #fff; outline: none; z-index: 5;
+}
+.camera-instruction-input::placeholder { color: rgba(255,255,255,0.5); }
+
+/* ====== Toast / Floating Text ====== */
+.floating-text {
+  position: fixed; top: 50%; left: 50%; z-index: 80;
+  transform: translate(-50%, -50%);
+  font-size: 20px; font-weight: 700; color: #FF8C69;
+  pointer-events: none; opacity: 0;
+  text-shadow: 0 2px 12px rgba(255,140,105,0.3);
+}
+
+/* ====== Confetti Canvas ====== */
+#confetti-canvas {
+  position: fixed; inset: 0; z-index: 75;
+  pointer-events: none;
+}
+
+/* ====== Empty State ====== */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 20px;
+  color: #C4B5A8; text-align: center;
+}
+.empty-state .empty-emoji { font-size: 48px; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 14px; line-height: 1.6; }
+
+/* ====== Scrollbar ====== */
+.view::-webkit-scrollbar { width: 0; }
+
+/* ====== Wobble Animation for Action Cards ====== */
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(0.3deg); }
+  75% { transform: rotate(-0.3deg); }
+}
+.action-card { animation: wobble 4s ease-in-out infinite; }
+.action-card:nth-child(2n) { animation-delay: 0.5s; }
+.action-card:nth-child(3n) { animation-delay: 1.2s; }
+.action-card:nth-child(5n) { animation-delay: 2.1s; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <div class="app-header">
+    <h1>🥫 念头罐头</h1>
+    <div class="subtitle">
+      无需思考，只需一个动作
+      <button id="historyOpenBtn" style="background:none;border:none;font-size:16px;cursor:pointer;vertical-align:middle;margin-left:4px;" title="最近删除">🕐</button>
+    </div>
+  </div>
+
+  <!-- Views -->
+  <div class="views-wrapper">
+    <div class="views-slider" id="viewsSlider">
+      <!-- Inspiration Can View -->
+      <div class="view" id="inspirationView">
+        <div class="pull-hint">↓ 下拉添加灵感 · <button id="batchOpenBtn" style="background:none;border:none;color:#FF8C69;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">批量添加</button></div>
+        <div class="pull-bar" id="pullBar">
+          <input type="text" id="pullInput" placeholder="输入一个灵感..." maxlength="80">
+          <button id="pullSubmit">✓</button>
+        </div>
+        <div class="center-btn-area">
+          <button class="big-draw-btn inspiration-btn" id="drawBtn">
+            🎲 抽一个灵感
+          </button>
+          <button id="shakeBtn" title="摇一摇（桌面版）"
+            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid #FF8C69; background: #fff; color: #FF8C69;
+                   font-size: 20px; cursor: pointer; transition: transform 0.15s;
+                   display: flex; align-items: center; justify-content: center;">
+            📳
+          </button>
+        </div>
+        <div class="scatter-area" id="scatterArea">
+          <div class="empty-state" id="inspirationEmpty">
+            <div class="empty-emoji">🫙</div>
+            <div class="empty-text">
+              罐头还是空的<br>
+              长按这里录音，或下拉输入<br>
+              把有趣的念头丢进来吧
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Switch View -->
+      <div class="view" id="actionView">
+        <div class="center-btn-area">
+          <button class="big-draw-btn action-btn" id="actionDrawBtn">
+            ✨ 重温快乐
+          </button>
+        </div>
+        <div class="action-grid" id="actionGrid">
+          <div class="empty-state" id="actionEmpty">
+            <div class="empty-emoji">📸</div>
+            <div class="empty-text">
+              还没有快乐开关<br>
+              点击 + 添加你的第一个动作吧
+            </div>
+          </div>
+        </div>
+        <!-- Add button for action switch -->
+        <button id="addActionBtn" style="
+          position: fixed; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); z-index: 15;
+          right: 8px;
+          width: 48px; height: 48px; border-radius: 50%; border: none;
+          background: linear-gradient(135deg, #69DB7C, #38B2AC);
+          color: #fff; font-size: 24px; cursor: pointer;
+          box-shadow: 0 4px 16px rgba(56,178,172,0.3);
+          display: flex; align-items: center; justify-content: center;
+        ">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon active" id="navInspiration">
+        🫙
+      </div>
+      <div class="nav-label">灵感罐头</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon action-active" id="navAction">
+        🎬
+      </div>
+      <div class="nav-label">动作开关</div>
+    </div>
+  </div>
+</div>
+
+<!-- Recording Overlay -->
+<div class="recording-overlay" id="recordingOverlay">
+  <div class="recording-bg"></div>
+  <div class="recording-mic">🎤</div>
+  <div class="recording-hint">正在聆听... 松手完成</div>
+</div>
+
+<!-- Action Overlay -->
+<div class="action-overlay" id="actionOverlay">
+  <div class="action-card-large" id="actionCardLarge">
+    <div class="big-emoji" id="actionEmoji"></div>
+    <div class="big-instruction" id="actionInstruction"></div>
+    <button class="action-do-btn" id="actionDoBtn">▶ 立刻去做</button>
+  </div>
+  <button class="action-close" id="actionCloseBtn">放回去</button>
+</div>
+
+<!-- Camera Modal -->
+<div class="camera-modal" id="cameraModal">
+  <div class="camera-preview" id="cameraPreview">
+    <video id="cameraVideo" autoplay playsinline style="display:none;"></video>
+    <div class="placeholder" id="cameraPlaceholder">📸</div>
+  </div>
+  <input type="text" class="camera-instruction-input" id="cameraInstruction"
+         placeholder="✏️ 动作指令：看着卡片，你立刻要做什么？（如：把拼图倒出来、打开涂色本）"
+         maxlength="40">
+  <div class="camera-controls">
+    <button class="camera-close-btn" id="cameraCloseBtn">✕ 取消</button>
+    <button class="camera-capture-btn" id="cameraCaptureBtn"></button>
+    <label class="camera-upload-btn" id="cameraUploadLabel">
+      📁 上传
+      <input type="file" accept="image/*" id="cameraFileInput" style="display:none;">
+    </label>
+  </div>
+</div>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Floating Text -->
+<div class="floating-text" id="floatingText"></div>
+
+<!-- History Modal -->
+<div class="batch-modal" id="historyModal">
+  <div class="batch-content" style="max-height:70vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:18px;color:#4A3728;">🕐 最近删除</h3>
+      <div style="display:flex;gap:8px;">
+        <button id="historyClearBtn" style="background:none;border:none;font-size:12px;color:#FF6B6B;cursor:pointer;">清空</button>
+        <button id="historyCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;color:#b8a59a;">✕</button>
+      </div>
+    </div>
+    <div id="historyList" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="text-align:center;color:#b8a59a;padding:20px;">暂无删除记录</div>
+    </div>
+  </div>
+</div>
+
+<!-- Batch Input Modal -->
+<div class="batch-modal" id="batchModal">
+  <div class="batch-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:18px;color:#4A3728;">📋 批量添加灵感</h3>
+      <button id="batchCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;color:#b8a59a;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#b8a59a;margin-bottom:10px;">每行一个灵感，回车分隔</p>
+    <textarea id="batchTextarea" rows="8" placeholder="试试用水彩画星空&#10;折一只会跳的纸青蛙&#10;在窗台上种一盆薄荷"
+      style="width:100%;border-radius:14px;border:2px solid #f0e8e0;padding:12px;font-size:15px;resize:none;outline:none;font-family:inherit;color:#4A3728;background:#FFF8F0;"></textarea>
+    <button id="batchSubmitBtn" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:14px;
+      background:linear-gradient(135deg,#FF8C69,#FF6B6B);color:#fff;font-size:16px;font-weight:700;cursor:pointer;">
+      ✨ 全部加入罐头
+    </button>
+  </div>
+</div>
+
+<!-- Photo Confirm Modal -->
+<div class="photo-confirm-modal" id="photoConfirmModal">
+  <div class="photo-confirm-content">
+    <h3 style="font-size:18px;color:#4A3728;margin-bottom:12px;text-align:center;">📸 确认动作卡片</h3>
+    <div id="photoConfirmPreview" style="width:100%;border-radius:16px;overflow:hidden;margin-bottom:12px;
+      background:#f0e8e0;display:flex;align-items:center;justify-content:center;min-height:200px;">
+      <img id="photoConfirmImg" src="" style="width:100%;object-fit:cover;display:none;">
+      <span id="photoConfirmEmoji" style="font-size:64px;display:none;">🎯</span>
+    </div>
+    <p style="font-size:12px;color:#b8a59a;margin-bottom:6px;">给这个动作起个名字 — 看着卡片，你立刻要做什么？</p>
+    <input type="text" id="photoConfirmName" placeholder="如：把拼图倒出来、打开涂色本"
+      style="width:100%;padding:12px;border-radius:14px;border:2px solid #f0e8e0;font-size:15px;outline:none;color:#4A3728;background:#FFF8F0;text-align:center;">
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="photoConfirmCancel" style="flex:1;padding:12px;border-radius:14px;border:2px solid #f0e8e0;
+        background:#fff;color:#b8a59a;font-size:14px;cursor:pointer;">取消</button>
+      <button id="photoConfirmSave" style="flex:1;padding:12px;border-radius:14px;border:none;
+        background:linear-gradient(135deg,#69DB7C,#38B2AC);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+        ✅ 保存到动作开关
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  AUDIO ENGINE — Web Audio API
+// ============================================================
+const AudioEngine = (() => {
+  let ctx = null;
+  const getCtx = () => {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  };
+
+  const playTone = (freq, duration, type = 'sine', vol = 0.15, ramp = true) => {
+    try {
+      const c = getCtx();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, c.currentTime);
+      gain.gain.setValueAtTime(vol, c.currentTime);
+      if (ramp) gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(c.currentTime);
+      osc.stop(c.currentTime + duration);
+    } catch(e) {}
+  };
+
+  const playNoise = (duration, vol = 0.08) => {
+    try {
+      const c = getCtx();
+      const bufferSize = c.sampleRate * duration;
+      const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const source = c.createBufferSource();
+      const gain = c.createGain();
+      source.buffer = buffer;
+      gain.gain.setValueAtTime(vol, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      source.connect(gain);
+      gain.connect(c.destination);
+      source.start();
+    } catch(e) {}
+  };
+
+  return {
+    ding: () => { playTone(880, 0.2); setTimeout(() => playTone(1320, 0.25), 100); },
+    shuffle: () => {
+      playNoise(0.15, 0.06);
+      setTimeout(() => playNoise(0.1, 0.05), 60);
+      setTimeout(() => playNoise(0.08, 0.04), 120);
+    },
+    firework: () => {
+      playTone(660, 0.1, 'sine', 0.08);
+      setTimeout(() => playTone(880, 0.1, 'sine', 0.06), 60);
+      setTimeout(() => playTone(1100, 0.15, 'sine', 0.07), 120);
+      setTimeout(() => playNoise(0.2, 0.04), 200);
+    },
+    swoosh: () => {
+      try {
+        const c = getCtx();
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, c.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.06, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.3);
+        osc.connect(gain); gain.connect(c.destination);
+        osc.start(c.currentTime); osc.stop(c.currentTime + 0.3);
+      } catch(e) {}
+    },
+    click: () => playTone(440, 0.05, 'square', 0.04, false),
+    pop: () => { playTone(600, 0.08, 'sine', 0.1); setTimeout(() => playTone(900, 0.06, 'sine', 0.06), 40); },
+    success: () => {
+      playTone(523, 0.12, 'sine', 0.1);
+      setTimeout(() => playTone(659, 0.12, 'sine', 0.08), 80);
+      setTimeout(() => playTone(784, 0.2, 'sine', 0.1), 160);
+    },
+    cardFly: () => {
+      try {
+        const c = getCtx();
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500, c.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, c.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.05, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+        osc.connect(gain); gain.connect(c.destination);
+        osc.start(c.currentTime); osc.stop(c.currentTime + 0.45);
+      } catch(e) {}
+    }
+  };
+})();
+
+// ============================================================
+//  VIBRATION ENGINE
+// ============================================================
+const VibrationEngine = {
+  vibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  },
+  shuffleVibe() {
+    // Increasing intensity: weak → strong
+    this.vibrate([30, 50, 50, 60, 80, 70, 150]);
+  },
+  confirmVibe() {
+    this.vibrate([100]);
+  },
+  dismissVibe() {
+    this.vibrate([20, 40, 20]);
+  },
+  cardTapVibe() {
+    this.vibrate([10]);
+  }
+};
+
+// ============================================================
+//  CARD DATA MANAGER
+// ============================================================
+const CARD_COLORS = [
+  '#FF6B6B', '#FFA94D', '#FFD43B', '#69DB7C',
+  '#4DABF7', '#DA77F2', '#F783AC', '#63E6BE',
+  '#FF8787', '#74C0FC', '#FF922B', '#20C997',
+];
+
+const DEFAULT_INSPIRATIONS = [
+  '试试用水彩画星空',
+  '用橡皮章刻一个小图案',
+  '折一只会跳的纸青蛙',
+  '在窗台上种一盆薄荷',
+  '用黏土捏一只小怪兽',
+  '试试用左手写一封信',
+  '找一个公园长椅坐十分钟',
+  '用旧杂志拼贴一幅画',
+  '学一个简单的魔术手法',
+  '给路边野花拍张照',
+  '试试做一杯手冲咖啡',
+  '在纸上画满各种圆圈',
+  '用乐高搭一个迷你房子',
+  '剪一个雪花形状的窗花',
+  '跟着音乐乱跳三分钟',
+];
+
+const CardManager = {
+  _inspirationCards: [],
+  _actionCards: [],
+  _deletedItems: [],
+  _nextId: 1,
+
+  init() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('twobox_data'));
+      if (saved) {
+        this._inspirationCards = saved.inspirationCards || [];
+        this._actionCards = saved.actionCards || [];
+        this._deletedItems = saved.deletedItems || [];
+        this._nextId = saved.nextId || 1;
+      }
+    } catch(e) {}
+  },
+
+  save() {
+    try {
+      localStorage.setItem('twobox_data', JSON.stringify({
+        inspirationCards: this._inspirationCards,
+        actionCards: this._actionCards,
+        deletedItems: this._deletedItems.slice(-30),
+        nextId: this._nextId,
+      }));
+    } catch(e) {}
+  },
+
+  addInspiration(text, color) {
+    const card = {
+      id: this._nextId++,
+      text: text || this._randomInspiration(),
+      color: color || CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+      createdAt: Date.now(),
+    };
+    this._inspirationCards.unshift(card);
+    this.save();
+    return card;
+  },
+
+  removeInspiration(id) {
+    const card = this._inspirationCards.find(c => c.id === id);
+    if (card) {
+      this._deletedItems.push({ ...card, type: 'inspiration', deletedAt: Date.now() });
+    }
+    this._inspirationCards = this._inspirationCards.filter(c => c.id !== id);
+    this.save();
+  },
+
+  getInspirationCards() { return [...this._inspirationCards]; },
+
+  addAction(text, instruction, imageDataUrl) {
+    const card = {
+      id: this._nextId++,
+      text: text || '',
+      instruction: instruction || '再做一次',
+      imageDataUrl: imageDataUrl || null,
+      createdAt: Date.now(),
+    };
+    this._actionCards.unshift(card);
+    this.save();
+    return card;
+  },
+
+  removeAction(id) {
+    const card = this._actionCards.find(c => c.id === id);
+    if (card) {
+      this._deletedItems.push({ ...card, type: 'action', deletedAt: Date.now() });
+    }
+    this._actionCards = this._actionCards.filter(c => c.id !== id);
+    this.save();
+  },
+
+  getDeletedItems() { return [...this._deletedItems].reverse(); },
+
+  restoreDeleted(index) {
+    // index in the reversed list (most recent first)
+    const reversed = [...this._deletedItems].reverse();
+    if (index < 0 || index >= reversed.length) return null;
+    const item = reversed[index];
+    // Remove from deleted list
+    this._deletedItems = this._deletedItems.filter(d => d.id !== item.id || d.deletedAt !== item.deletedAt);
+    if (item.type === 'inspiration') {
+      const card = { id: this._nextId++, text: item.text, color: item.color, createdAt: Date.now() };
+      this._inspirationCards.unshift(card);
+      this.save();
+      return card;
+    } else {
+      const card = { id: this._nextId++, text: item.text, instruction: item.instruction, imageDataUrl: item.imageDataUrl, createdAt: Date.now() };
+      this._actionCards.unshift(card);
+      this.save();
+      return card;
+    }
+  },
+
+  clearDeleted() {
+    this._deletedItems = [];
+    this.save();
+  },
+
+  getActionCards() { return [...this._actionCards]; },
+
+  convertToAction(inspirationId) {
+    const idx = this._inspirationCards.findIndex(c => c.id === inspirationId);
+    if (idx === -1) return null;
+    const insp = this._inspirationCards[idx];
+    this._inspirationCards.splice(idx, 1);
+    const action = {
+      id: this._nextId++,
+      text: insp.text,
+      instruction: insp.text,
+      imageDataUrl: null,
+      createdAt: Date.now(),
+    };
+    this._actionCards.unshift(action);
+    this.save();
+    return action;
+  },
+
+  convertActionToInspiration(actionId) {
+    const idx = this._actionCards.findIndex(c => c.id === actionId);
+    if (idx === -1) return null;
+    const action = this._actionCards[idx];
+    this._actionCards.splice(idx, 1);
+    const insp = {
+      id: this._nextId++,
+      text: action.text || action.instruction,
+      color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+      createdAt: Date.now(),
+    };
+    this._inspirationCards.unshift(insp);
+    this.save();
+    return insp;
+  },
+
+  _randomInspiration() {
+    return DEFAULT_INSPIRATIONS[Math.floor(Math.random() * DEFAULT_INSPIRATIONS.length)];
+  }
+};
+
+// ============================================================
+//  CONFETTI ENGINE
+// ============================================================
+const ConfettiEngine = (() => {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId = null;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function burst(x, y, count = 40) {
+    const colors = ['#FF6B6B','#FFD43B','#69DB7C','#4DABF7','#DA77F2','#F783AC','#FFA94D','#63E6BE'];
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const speed = 3 + Math.random() * 7;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        size: 4 + Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1,
+        decay: 0.012 + Math.random() * 0.02,
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 15,
+        shape: Math.random() > 0.5 ? 'circle' : 'rect',
+      });
+    }
+    if (!animId) animate();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15; // gravity
+      p.life -= p.decay;
+      p.rotation += p.rotSpeed;
+      if (p.life <= 0) return false;
+
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      }
+      ctx.restore();
+      return true;
+    });
+
+    if (particles.length === 0) {
+      animId = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+    animId = requestAnimationFrame(animate);
+  }
+
+  return { burst };
+})();
+
+// ============================================================
+//  UI CONTROLLER
+// ============================================================
+const UIController = {
+  currentView: 'inspiration',
+  selectedCardId: null,
+
+  init() {
+    CardManager.init();
+    this.renderAll();
+    this.bindEvents();
+    this.setupCamera();
+  },
+
+  // ---- View Switching ----
+  switchView(view) {
+    if (this.currentView === view) return;
+    this.currentView = view;
+    AudioEngine.swoosh();
+    VibrationEngine.cardTapVibe();
+
+    const slider = document.getElementById('viewsSlider');
+    const navInsp = document.getElementById('navInspiration');
+    const navAct = document.getElementById('navAction');
+    const drawBtn = document.getElementById('drawBtn');
+    const actionDrawBtn = document.getElementById('actionDrawBtn');
+    const addBtn = document.getElementById('addActionBtn');
+
+    if (view === 'action') {
+      slider.classList.add('in-action');
+      navInsp.classList.remove('active');
+      navAct.classList.add('active');
+      drawBtn.textContent = '✨ 重温快乐';
+      drawBtn.className = 'big-draw-btn action-btn';
+      actionDrawBtn.style.display = 'block';
+      addBtn.style.display = 'flex';
+    } else {
+      slider.classList.remove('in-action');
+      navInsp.classList.add('active');
+      navAct.classList.remove('active');
+      drawBtn.textContent = '🎲 抽一个灵感';
+      drawBtn.className = 'big-draw-btn inspiration-btn';
+      actionDrawBtn.style.display = 'none';
+      addBtn.style.display = 'none';
+    }
+    this.deselectCard();
+    this.renderCards();
+  },
+
+  // ---- Rendering ----
+  renderAll() {
+    this.renderCards();
+    this.updateEmptyStates();
+  },
+
+  renderCards() {
+    this.renderInspirationCards();
+    this.renderActionCards();
+  },
+
+  renderInspirationCards() {
+    const area = document.getElementById('scatterArea');
+    const cards = CardManager.getInspirationCards();
+
+    // Remove existing cards, keep empty state
+    area.querySelectorAll('.scatter-card').forEach(el => el.remove());
+
+    if (cards.length === 0) {
+      area.style.minHeight = '300px';
+      return;
+    }
+
+    const areaRect = area.getBoundingClientRect();
+    const areaW = areaRect.width || 350;
+    const cols = Math.max(2, Math.floor(areaW / 140));
+    const rows = Math.ceil(cards.length / cols);
+    area.style.minHeight = Math.max(300, rows * 130 + 40) + 'px';
+
+    cards.forEach((card, i) => {
+      const el = document.createElement('div');
+      el.className = 'scatter-card';
+      if (this.selectedCardId === card.id) el.classList.add('selected');
+      el.dataset.id = card.id;
+      el.style.backgroundColor = card.color;
+      el.style.width = '135px';
+      el.style.padding = '14px 12px';
+
+      // Calculate scattered position
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const baseX = (areaW / (cols + 1)) * (col + 1) - 67;
+      const baseY = 20 + row * 125;
+      const offsetX = (Math.random() - 0.5) * 30;
+      const offsetY = (Math.random() - 0.5) * 20;
+      const rotation = (Math.random() - 0.5) * 12;
+
+      el.style.left = (baseX + offsetX) + 'px';
+      el.style.top = (baseY + offsetY) + 'px';
+      el.style.transform = `rotate(${rotation}deg)`;
+      el.style.zIndex = i;
+
+      el.innerHTML = `
+        <span>${this.escapeHtml(card.text)}</span>
+        <div class="card-actions">
+          <button class="card-action-btn" data-action="convert" title="转为动作">🤏</button>
+          <button class="card-action-btn" data-action="dismiss" title="划掉">✕</button>
+        </div>
+      `;
+
+      // Click to select
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.card-action-btn')) return;
+        this.selectCard(card.id, el);
+      });
+
+      // Action buttons
+      el.querySelector('[data-action="convert"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.convertCard(card.id, el);
+      });
+      el.querySelector('[data-action="dismiss"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dismissCard(card.id, el);
+      });
+
+      // Swipe up to dismiss
+      this.bindSwipe(el, card.id);
+
+      area.appendChild(el);
+    });
+  },
+
+  renderActionCards() {
+    const grid = document.getElementById('actionGrid');
+    const cards = CardManager.getActionCards();
+
+    // Remove existing cards, keep empty state
+    grid.querySelectorAll('.action-card').forEach(el => el.remove());
+
+    cards.forEach(card => {
+      const el = document.createElement('div');
+      el.className = 'action-card';
+      el.dataset.id = card.id;
+
+      const mediaContent = card.imageDataUrl
+        ? `<img src="${card.imageDataUrl}" alt="">`
+        : this._getEmojiForText(card.text);
+
+      el.innerHTML = `
+        <div class="card-media">${mediaContent}</div>
+        <div class="card-info">
+          <div class="instruction" style="cursor:pointer;" title="点击编辑">
+            ${this.escapeHtml(card.instruction)}
+            <span style="font-size:10px;color:#b8a59a;margin-left:2px;">✏️</span>
+          </div>
+          <button class="card-btn">▶ ${this.escapeHtml(card.instruction)}</button>
+          <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
+            <button class="action-card-sub-btn" data-action="rename" title="修改名字"
+              style="width:26px;height:26px;border-radius:50%;border:none;background:#f0e8e0;color:#b8a59a;font-size:12px;cursor:pointer;">✏️</button>
+            <button class="action-card-sub-btn" data-action="to-inspiration" title="移回灵感罐头"
+              style="width:26px;height:26px;border-radius:50%;border:none;background:#f0e8e0;color:#b8a59a;font-size:12px;cursor:pointer;">↩</button>
+            <button class="action-card-sub-btn" data-action="delete-action" title="删除"
+              style="width:26px;height:26px;border-radius:50%;border:none;background:#f0e8e0;color:#b8a59a;font-size:12px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+      `;
+
+      el.querySelector('.card-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openActionOverlay(card);
+      });
+
+      el.querySelector('.instruction').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.renameActionCard(card.id);
+      });
+      el.querySelector('[data-action="rename"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.renameActionCard(card.id);
+      });
+      el.querySelector('[data-action="to-inspiration"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.moveActionToInspiration(card.id, el);
+      });
+      el.querySelector('[data-action="delete-action"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteActionCard(card.id, el);
+      });
+
+      el.addEventListener('click', () => {
+        this.openActionOverlay(card);
+      });
+
+      grid.appendChild(el);
+    });
+  },
+
+  updateEmptyStates() {
+    const inspEmpty = document.getElementById('inspirationEmpty');
+    const actionEmpty = document.getElementById('actionEmpty');
+    inspEmpty.style.display = CardManager.getInspirationCards().length === 0 ? 'flex' : 'none';
+    actionEmpty.style.display = CardManager.getActionCards().length === 0 ? 'flex' : 'none';
+  },
+
+  // ---- Card Interactions ----
+  selectCard(id, el) {
+    VibrationEngine.cardTapVibe();
+    AudioEngine.pop();
+
+    // Deselect previous
+    document.querySelectorAll('.scatter-card.selected').forEach(c => c.classList.remove('selected'));
+    this.selectedCardId = id;
+    el.classList.add('selected');
+
+    // Animate to center
+    const area = document.getElementById('scatterArea');
+    const areaRect = area.getBoundingClientRect();
+    const cardRect = el.getBoundingClientRect();
+    const centerX = areaRect.width / 2 - cardRect.width / 2;
+    const centerY = areaRect.height / 2 - cardRect.height / 2;
+
+    anime({
+      targets: el,
+      left: centerX + 'px',
+      top: centerY + 'px',
+      rotate: '0deg',
+      scale: 1.2,
+      duration: 400,
+      easing: 'easeOutElastic(1, .6)',
+      update: function() {
+        el.style.zIndex = '10';
+      }
+    });
+
+    // Dim other cards
+    document.querySelectorAll('.scatter-card:not(.selected)').forEach(c => {
+      c.style.filter = 'brightness(0.7) blur(1px)';
+      c.style.pointerEvents = 'none';
+    });
+  },
+
+  deselectCard() {
+    this.selectedCardId = null;
+    document.querySelectorAll('.scatter-card').forEach(c => {
+      c.classList.remove('selected');
+      c.style.filter = '';
+      c.style.pointerEvents = '';
+    });
+    this.renderInspirationCards();
+  },
+
+  dismissCard(id, el) {
+    AudioEngine.firework();
+    VibrationEngine.dismissVibe();
+
+    const rect = el.getBoundingClientRect();
+    ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 50);
+
+    // Animate fly away
+    anime({
+      targets: el,
+      translateY: -200,
+      rotate: '25deg',
+      opacity: 0,
+      scale: 0.5,
+      duration: 500,
+      easing: 'easeInBack',
+      complete: () => {
+        CardManager.removeInspiration(id);
+        this.deselectCard();
+        this.renderAll();
+        this.showFloatingText('又排除了一个，酷！🫧');
+      }
+    });
+  },
+
+  convertCard(id, el) {
+    AudioEngine.cardFly();
+    VibrationEngine.confirmVibe();
+
+    // Get target position (action nav icon)
+    const navIcon = document.getElementById('navAction');
+    const navRect = navIcon.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    const targetX = navRect.left + navRect.width / 2 - elRect.width / 2;
+    const targetY = navRect.top + navRect.height / 2 - elRect.height / 2;
+
+    anime({
+      targets: el,
+      left: targetX + 'px',
+      top: targetY + 'px',
+      scale: 0.3,
+      opacity: 0,
+      rotate: '0deg',
+      duration: 500,
+      easing: 'easeInQuad',
+      complete: () => {
+        const actionCard = CardManager.convertToAction(id);
+        this.deselectCard();
+        this.renderAll();
+        if (actionCard) {
+          // Pulse the action nav
+          anime({
+            targets: '#navAction',
+            scale: [1, 1.3, 1],
+            duration: 500,
+            easing: 'easeOutElastic(1, .5)',
+          });
+          this.showFloatingText('已加入动作开关！✨');
+        }
+      }
+    });
+  },
+
+  openActionOverlay(card) {
+    AudioEngine.pop();
+    VibrationEngine.confirmVibe();
+
+    const overlay = document.getElementById('actionOverlay');
+    document.getElementById('actionEmoji').textContent = this._getEmojiForText(card.text);
+    document.getElementById('actionInstruction').textContent = card.instruction;
+    overlay.classList.add('active');
+    overlay._currentCard = card;
+
+    anime({
+      targets: '.action-card-large',
+      scale: [0.8, 1],
+      duration: 400,
+      easing: 'easeOutElastic(1, .6)',
+    });
+  },
+
+  closeActionOverlay() {
+    const overlay = document.getElementById('actionOverlay');
+    overlay.classList.remove('active');
+  },
+
+  // ---- Action Card Management ----
+  moveActionToInspiration(id, el) {
+    AudioEngine.cardFly();
+    VibrationEngine.cardTapVibe();
+
+    anime({
+      targets: el,
+      scale: [1, 1.1, 0.3],
+      opacity: [1, 1, 0],
+      rotate: ['0deg', '5deg', '-15deg'],
+      duration: 500,
+      easing: 'easeInQuad',
+      complete: () => {
+        const insp = CardManager.convertActionToInspiration(id);
+        this.renderAll();
+        if (insp) {
+          // Pulse the inspiration nav
+          anime({
+            targets: '#navInspiration',
+            scale: [1, 1.3, 1],
+            duration: 500,
+            easing: 'easeOutElastic(1, .5)',
+          });
+          this.showFloatingText('已移回灵感罐头！🫙');
+        }
+      }
+    });
+  },
+
+  deleteActionCard(id, el) {
+    AudioEngine.firework();
+    VibrationEngine.dismissVibe();
+
+    const rect = el.getBoundingClientRect();
+    ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 30);
+
+    anime({
+      targets: el,
+      scale: 0.3,
+      opacity: 0,
+      rotate: '20deg',
+      duration: 400,
+      easing: 'easeInBack',
+      complete: () => {
+        CardManager.removeAction(id);
+        this.renderAll();
+        this.showFloatingText('已删除！🗑️');
+      }
+    });
+  },
+
+  // ---- Drawing ----
+  drawInspiration() {
+    const cards = CardManager.getInspirationCards();
+    if (cards.length === 0) {
+      this.showFloatingText('罐头还是空的，先添加一些灵感吧~ 🫙');
+      AudioEngine.click();
+      return;
+    }
+
+    AudioEngine.shuffle();
+    VibrationEngine.shuffleVibe();
+
+    // Animate all cards shuffling
+    const cardEls = document.querySelectorAll('.scatter-card');
+    const area = document.getElementById('scatterArea');
+    const areaRect = area.getBoundingClientRect();
+    const areaW = areaRect.width || 350;
+    const areaH = areaRect.height || 400;
+
+    // First, shuffle all cards to random positions
+    cardEls.forEach((el, i) => {
+      const randX = 10 + Math.random() * (areaW - 150);
+      const randY = 10 + Math.random() * (areaH - 120);
+      const randRot = (Math.random() - 0.5) * 45;
+
+      anime({
+        targets: el,
+        left: randX + 'px',
+        top: randY + 'px',
+        rotate: randRot + 'deg',
+        scale: 1,
+        duration: 400 + Math.random() * 300,
+        easing: 'easeInOutQuad',
+        delay: i * 30,
+      });
+    });
+
+    // After shuffle, select a random card
+    setTimeout(() => {
+      const randomIdx = Math.floor(Math.random() * cards.length);
+      const randomCard = cards[randomIdx];
+      const targetEl = document.querySelector(`.scatter-card[data-id="${randomCard.id}"]`);
+      if (targetEl) {
+        this.selectCard(randomCard.id, targetEl);
+        AudioEngine.ding();
+      }
+    }, 800);
+  },
+
+  drawAction() {
+    const cards = CardManager.getActionCards();
+    if (cards.length === 0) {
+      this.showFloatingText('还没有快乐开关，点击 + 添加吧~ 📸');
+      AudioEngine.click();
+      return;
+    }
+
+    AudioEngine.shuffle();
+    VibrationEngine.shuffleVibe();
+
+    // Brief shuffle animation on grid cards
+    const actionCards = document.querySelectorAll('.action-card');
+    actionCards.forEach((el, i) => {
+      anime({
+        targets: el,
+        scale: [1, 1.05, 0.95, 1],
+        duration: 500,
+        delay: i * 40,
+        easing: 'easeInOutQuad',
+      });
+    });
+
+    // Pick random
+    setTimeout(() => {
+      const randomCard = cards[Math.floor(Math.random() * cards.length)];
+      this.openActionOverlay(randomCard);
+      AudioEngine.ding();
+    }, 600);
+  },
+
+  // ---- Adding Cards ----
+  addInspirationByText(text) {
+    if (!text.trim()) return;
+    const card = CardManager.addInspiration(text.trim());
+    this.renderAll();
+    AudioEngine.ding();
+    VibrationEngine.cardTapVibe();
+
+    // Animate the new card flying in
+    setTimeout(() => {
+      const el = document.querySelector(`.scatter-card[data-id="${card.id}"]`);
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.3) rotate(0deg)';
+        anime({
+          targets: el,
+          opacity: 1,
+          scale: 1,
+          duration: 500,
+          easing: 'easeOutElastic(1, .6)',
+        });
+      }
+    }, 50);
+  },
+
+  addInspirationByVoice() {
+    // Try Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.start();
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        if (text) {
+          this.addInspirationByText(text);
+          this.showFloatingText('听到啦！✨');
+        }
+      };
+      recognition.onerror = () => {
+        // Fallback: show text input prompt
+        this._showVoiceFallbackInput();
+      };
+      recognition.onend = () => {};
+    } else {
+      // Fallback: show text input prompt
+      this._showVoiceFallbackInput();
+    }
+  },
+
+  _showVoiceFallbackInput() {
+    // Show a quick text input prompt
+    const text = prompt('💡 说说你的灵感吧（语音识别需要 HTTPS 环境）：', '');
+    if (text && text.trim()) {
+      this.addInspirationByText(text.trim());
+      this.showFloatingText('捕获了一个灵感！✨');
+    } else {
+      this.showFloatingText('没关系，想起了再说~ 🫙');
+    }
+  },
+
+  addActionCard(imageDataUrl, instruction) {
+    const instr = instruction && instruction.trim() ? instruction.trim() : '点击试试看';
+    const card = CardManager.addAction('', instr, imageDataUrl);
+    this.renderAll();
+    AudioEngine.success();
+    VibrationEngine.confirmVibe();
+    this.showFloatingText('快乐开关已就绪！🎬');
+
+    setTimeout(() => {
+      const el = document.querySelector(`.action-card[data-id="${card.id}"]`);
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.5)';
+        anime({
+          targets: el,
+          opacity: 1,
+          scale: 1,
+          duration: 500,
+          easing: 'easeOutElastic(1, .6)',
+        });
+      }
+    }, 50);
+  },
+
+  // ---- Batch Modal ----
+  openBatchModal() {
+    const modal = document.getElementById('batchModal');
+    modal.classList.add('active');
+    document.getElementById('batchTextarea').value = '';
+    document.getElementById('batchTextarea').focus();
+    AudioEngine.click();
+    anime({
+      targets: '.batch-content',
+      scale: [0.8, 1],
+      duration: 300,
+      easing: 'easeOutBack',
+    });
+  },
+
+  closeBatchModal() {
+    document.getElementById('batchModal').classList.remove('active');
+  },
+
+  submitBatchInspirations() {
+    const textarea = document.getElementById('batchTextarea');
+    const lines = textarea.value.split('\n').filter(line => line.trim());
+    if (lines.length === 0) {
+      this.showFloatingText('至少输入一行灵感哦~');
+      return;
+    }
+
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        this.addInspirationByText(line.trim());
+      }, i * 80);
+    });
+
+    AudioEngine.success();
+    VibrationEngine.confirmVibe();
+    this.showFloatingText(`已加入 ${lines.length} 个灵感！✨`);
+    this.closeBatchModal();
+  },
+
+  // ---- Action Card Rename ----
+  renameActionCard(id) {
+    const card = CardManager.getActionCards().find(c => c.id === id);
+    if (!card) return;
+    const newName = prompt('✏️ 修改动作指令：', card.instruction);
+    if (newName && newName.trim() && newName.trim() !== card.instruction) {
+      card.instruction = newName.trim();
+      CardManager.save();
+      this.renderAll();
+      AudioEngine.ding();
+      this.showFloatingText('已更新！✏️');
+    }
+  },
+
+  // ---- Floating Text ----
+  showFloatingText(text) {
+    const el = document.getElementById('floatingText');
+    el.textContent = text;
+    el.style.opacity = '1';
+    el.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    anime({
+      targets: el,
+      opacity: [1, 0],
+      translateY: '-=40',
+      scale: [0.8, 1.1],
+      duration: 1800,
+      easing: 'easeOutQuad',
+      complete: () => { el.style.opacity = '0'; }
+    });
+  },
+
+  // ---- Camera ----
+  _cameraStream: null,
+
+  async setupCamera() {
+    // Will be triggered when opening camera modal
+  },
+
+  async openCamera() {
+    const modal = document.getElementById('cameraModal');
+    modal.classList.add('active');
+    document.getElementById('cameraInstruction').value = '';
+
+    // Try to access camera
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 720 }, height: { ideal: 720 } },
+        audio: false
+      });
+      this._cameraStream = stream;
+      const video = document.getElementById('cameraVideo');
+      video.srcObject = stream;
+      video.style.display = 'block';
+      document.getElementById('cameraPlaceholder').style.display = 'none';
+    } catch(e) {
+      // Camera not available, show placeholder
+      document.getElementById('cameraVideo').style.display = 'none';
+      document.getElementById('cameraPlaceholder').style.display = 'flex';
+    }
+  },
+
+  closeCamera() {
+    const modal = document.getElementById('cameraModal');
+    modal.classList.remove('active');
+    if (this._cameraStream) {
+      this._cameraStream.getTracks().forEach(t => t.stop());
+      this._cameraStream = null;
+    }
+    document.getElementById('cameraVideo').style.display = 'none';
+    document.getElementById('cameraPlaceholder').style.display = 'flex';
+  },
+
+  capturePhoto() {
+    const video = document.getElementById('cameraVideo');
+    if (video.style.display === 'none' || !this._cameraStream) {
+      // No camera, trigger file upload
+      document.getElementById('cameraFileInput').click();
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 360;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+    // Flash effect
+    anime({
+      targets: '#cameraPreview',
+      backgroundColor: ['#fff', '#2a2a2a'],
+      duration: 300,
+      easing: 'easeOutQuad',
+    });
+
+    AudioEngine.click();
+    this.closeCamera();
+    // Show photo confirmation modal
+    this._pendingPhotoData = dataUrl;
+    this._openPhotoConfirm(dataUrl);
+  },
+
+  handleFileUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.closeCamera();
+      AudioEngine.click();
+      this._pendingPhotoData = e.target.result;
+      this._openPhotoConfirm(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  },
+
+  _pendingPhotoData: null,
+
+  _openPhotoConfirm(dataUrl) {
+    const modal = document.getElementById('photoConfirmModal');
+    const img = document.getElementById('photoConfirmImg');
+    const emoji = document.getElementById('photoConfirmEmoji');
+    const nameInput = document.getElementById('photoConfirmName');
+
+    img.src = dataUrl;
+    img.style.display = 'block';
+    emoji.style.display = 'none';
+    nameInput.value = '';
+    nameInput.focus();
+    modal.classList.add('active');
+
+    anime({
+      targets: '.photo-confirm-content',
+      scale: [0.8, 1],
+      duration: 300,
+      easing: 'easeOutBack',
+    });
+  },
+
+  confirmPhotoSave() {
+    const nameInput = document.getElementById('photoConfirmName');
+    const instruction = nameInput.value.trim();
+    if (this._pendingPhotoData) {
+      this.addActionCard(this._pendingPhotoData, instruction);
+    }
+    this._pendingPhotoData = null;
+    this.closePhotoConfirm();
+  },
+
+  closePhotoConfirm() {
+    document.getElementById('photoConfirmModal').classList.remove('active');
+    this._pendingPhotoData = null;
+  },
+
+  // ---- Swipe Detection ----
+  bindSwipe(el, cardId) {
+    let startY = 0;
+    let startX = 0;
+    let moved = false;
+
+    el.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      moved = false;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      const dy = e.touches[0].clientY - startY;
+      const dx = e.touches[0].clientX - startX;
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        moved = true;
+        el.style.transform = `translateY(${dy}px) rotate(${dx * 0.05}deg)`;
+        el.style.opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchend', (e) => {
+      if (!moved) return;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy < -60) {
+        // Swipe up - dismiss
+        this.dismissCard(cardId, el);
+      } else {
+        // Reset position
+        anime({
+          targets: el,
+          translateY: 0,
+          rotate: el.style.transform.match(/rotate\(([^)]+)\)/)?.[1] || '0deg',
+          opacity: 1,
+          duration: 300,
+          easing: 'easeOutBack',
+        });
+      }
+      moved = false;
+    });
+  },
+
+  // ---- Helpers ----
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  },
+
+  _getEmojiForText(text) {
+    const map = {
+      '画': '🎨', '拼图': '🧩', '折': '📄', '种': '🌱', '捏': '🫳',
+      '写': '✍️', '公园': '🌳', '拼贴': '🖼️', '魔术': '🪄', '拍照': '📷',
+      '咖啡': '☕', '画满': '✏️', '乐高': '🧱', '剪': '✂️', '跳': '💃',
+      '水彩': '🎨', '橡皮章': '🪄', '青蛙': '🐸', '薄荷': '🌿',
+      '怪兽': '👾', '左手': '🤚', '长椅': '🪑', '杂志': '📰',
+      '野花': '🌼', '雪花': '❄️', '音乐': '🎵',
+    };
+    for (const [key, emoji] of Object.entries(map)) {
+      if (text.includes(key)) return emoji;
+    }
+    return '🎯';
+  },
+
+  // ---- Event Binding ----
+  bindEvents() {
+    // View switching
+    document.getElementById('navInspiration').addEventListener('click', () => this.switchView('inspiration'));
+    document.getElementById('navAction').addEventListener('click', () => this.switchView('action'));
+
+    // Draw buttons
+    document.getElementById('drawBtn').addEventListener('click', () => this.drawInspiration());
+    document.getElementById('actionDrawBtn').addEventListener('click', () => this.drawAction());
+    // Shake button for desktop
+    document.getElementById('shakeBtn').addEventListener('click', () => {
+      if (this.currentView === 'inspiration') {
+        this.drawInspiration();
+      } else {
+        this.drawAction();
+      }
+    });
+
+    // Action overlay
+    document.getElementById('actionDoBtn').addEventListener('click', () => {
+      AudioEngine.success();
+      VibrationEngine.confirmVibe();
+      const overlay = document.getElementById('actionOverlay');
+      // Burst confetti
+      const rect = document.getElementById('actionDoBtn').getBoundingClientRect();
+      ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
+      this.showFloatingText('太棒了！你做到了！🌟');
+      this.closeActionOverlay();
+    });
+    document.getElementById('actionCloseBtn').addEventListener('click', () => {
+      this.closeActionOverlay();
+      AudioEngine.click();
+    });
+    // Close action overlay when clicking background
+    document.getElementById('actionOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        this.closeActionOverlay();
+        AudioEngine.click();
+      }
+    });
+
+    // Pull-down input
+    const pullBar = document.getElementById('pullBar');
+    const pullInput = document.getElementById('pullInput');
+    const pullSubmit = document.getElementById('pullSubmit');
+    const inspirationView = document.getElementById('inspirationView');
+
+    let pullStartY = 0;
+    let pullDetected = false;
+
+    inspirationView.addEventListener('touchstart', (e) => {
+      if (inspirationView.scrollTop <= 0) {
+        pullStartY = e.touches[0].clientY;
+        pullDetected = true;
+      }
+    }, { passive: true });
+
+    inspirationView.addEventListener('touchmove', (e) => {
+      if (!pullDetected) return;
+      const dy = e.touches[0].clientY - pullStartY;
+      if (dy > 60) {
+        pullBar.classList.add('visible');
+        pullInput.focus();
+        pullDetected = false;
+        AudioEngine.click();
+      }
+    }, { passive: true });
+
+    inspirationView.addEventListener('touchend', () => { pullDetected = false; });
+
+    pullSubmit.addEventListener('click', () => {
+      this.addInspirationByText(pullInput.value);
+      pullInput.value = '';
+      pullBar.classList.remove('visible');
+      pullInput.blur();
+    });
+    pullInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.addInspirationByText(pullInput.value);
+        pullInput.value = '';
+        pullBar.classList.remove('visible');
+        pullInput.blur();
+      }
+    });
+
+    // Also show pull bar on double-click of header area (desktop fallback)
+    document.querySelector('.app-header').addEventListener('dblclick', () => {
+      pullBar.classList.toggle('visible');
+      if (pullBar.classList.contains('visible')) pullInput.focus();
+    });
+
+    // Long press for voice input
+    let longPressTimer = null;
+    let isLongPress = false;
+    const scatterArea = document.getElementById('scatterArea');
+
+    scatterArea.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.scatter-card') || e.target.closest('.card-action-btn')) return;
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        document.getElementById('recordingOverlay').classList.add('active');
+        AudioEngine.click();
+        VibrationEngine.cardTapVibe();
+      }, 500);
+    });
+
+    scatterArea.addEventListener('pointerup', (e) => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        this.addInspirationByVoice();
+        isLongPress = false;
+      }
+    });
+
+    scatterArea.addEventListener('pointerleave', () => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        isLongPress = false;
+      }
+    });
+
+    // Also allow long press on empty state
+    const inspEmpty = document.getElementById('inspirationEmpty');
+    inspEmpty.addEventListener('pointerdown', (e) => {
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        document.getElementById('recordingOverlay').classList.add('active');
+        AudioEngine.click();
+        VibrationEngine.cardTapVibe();
+      }, 500);
+    });
+    inspEmpty.addEventListener('pointerup', () => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        this.addInspirationByVoice();
+        isLongPress = false;
+      }
+    });
+    inspEmpty.addEventListener('pointerleave', () => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        isLongPress = false;
+      }
+    });
+
+    // Click on deselected area to deselect
+    scatterArea.addEventListener('click', (e) => {
+      if (this.selectedCardId && !e.target.closest('.scatter-card') && !isLongPress) {
+        this.deselectCard();
+      }
+    });
+
+    // Camera
+    document.getElementById('addActionBtn').addEventListener('click', () => this.openCamera());
+    document.getElementById('cameraCaptureBtn').addEventListener('click', () => this.capturePhoto());
+    document.getElementById('cameraCloseBtn').addEventListener('click', () => this.closeCamera());
+    document.getElementById('cameraFileInput').addEventListener('change', (e) => {
+      if (e.target.files[0]) this.handleFileUpload(e.target.files[0]);
+    });
+    document.getElementById('cameraUploadLabel').addEventListener('click', (e) => {
+      // This is a label, clicking it triggers the file input
+    });
+
+    // Photo confirm modal
+    document.getElementById('photoConfirmSave').addEventListener('click', () => {
+      this.confirmPhotoSave();
+    });
+    document.getElementById('photoConfirmCancel').addEventListener('click', () => {
+      this.closePhotoConfirm();
+    });
+    document.getElementById('photoConfirmModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) this.closePhotoConfirm();
+    });
+    // Enter key to save
+    document.getElementById('photoConfirmName').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.confirmPhotoSave();
+    });
+
+    // Batch input
+    document.getElementById('batchOpenBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openBatchModal();
+    });
+    document.getElementById('batchCloseBtn').addEventListener('click', () => {
+      this.closeBatchModal();
+    });
+    document.getElementById('batchSubmitBtn').addEventListener('click', () => {
+      this.submitBatchInspirations();
+    });
+    document.getElementById('batchTextarea').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        this.submitBatchInspirations();
+      }
+    });
+    document.getElementById('batchModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) this.closeBatchModal();
+    });
+
+    // Shake detection (mobile)
+    if (window.DeviceMotionEvent) {
+      let lastShake = 0;
+      let lastX = 0, lastY = 0, lastZ = 0;
+      window.addEventListener('devicemotion', (e) => {
+        const acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        const delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY) + Math.abs(acc.z - lastZ);
+        lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+        const now = Date.now();
+        if (delta > 25 && now - lastShake > 1500) {
+          lastShake = now;
+          if (this.currentView === 'inspiration') {
+            this.drawInspiration();
+          }
+        }
+      });
+    }
+
+    // Keyboard shortcuts for desktop
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '1') this.switchView('inspiration');
+      if (e.key === '2') this.switchView('action');
+      if (e.key === ' ' && this.currentView === 'inspiration') {
+        e.preventDefault();
+        this.drawInspiration();
+      }
+      if (e.key === ' ' && this.currentView === 'action') {
+        e.preventDefault();
+        this.drawAction();
+      }
+      if (e.key === 'Escape') {
+        this.closeActionOverlay();
+        this.closeCamera();
+        this.deselectCard();
+      }
+      if (e.key === 'n' && e.ctrlKey) {
+        e.preventDefault();
+        if (this.currentView === 'inspiration') {
+          document.getElementById('pullBar').classList.toggle('visible');
+          if (document.getElementById('pullBar').classList.contains('visible')) {
+            document.getElementById('pullInput').focus();
+          }
+        }
+      }
+    });
+
+    // Swipe left/right on the views wrapper for view switching
+    let swipeStartX = 0;
+    const viewsWrapper = document.querySelector('.views-wrapper');
+    viewsWrapper.addEventListener('touchstart', (e) => {
+      swipeStartX = e.touches[0].clientX;
+    }, { passive: true });
+    viewsWrapper.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      if (Math.abs(dx) > 60) {
+        if (dx < 0 && this.currentView === 'inspiration') {
+          this.switchView('action');
+        } else if (dx > 0 && this.currentView === 'action') {
+          this.switchView('inspiration');
+        }
+      }
+    });
+
+    // Initial setup
+    document.getElementById('addActionBtn').style.display = 'none';
+    document.getElementById('actionDrawBtn').style.display = 'none';
+  }
+};
+
+// ============================================================
+//  INITIALIZATION
+// ============================================================
+function positionAddButton() {
+  const addBtn = document.getElementById('addActionBtn');
+  if (addBtn) {
+    const appWidth = Math.min(window.innerWidth, 480);
+    addBtn.style.right = Math.max(8, (window.innerWidth - appWidth) / 2 + 8) + 'px';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  UIController.init();
+  AudioEngine.click(); // Warm up audio context
+  positionAddButton();
+});
+
+// Handle the add button positioning for responsive
+window.addEventListener('resize', positionAddButton);
+</script>
+</body>
+</html>
