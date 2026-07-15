@@ -208,6 +208,188 @@ body {
   background: linear-gradient(135deg, #69DB7C, #38B2AC);
 }
 
+/* ====== Group Sidebar ====== */
+.group-sidebar {
+  width: 52px; flex-shrink: 0;
+  background: rgba(255,248,240,0.95);
+  border-right: 1px solid rgba(0,0,0,0.05);
+  display: flex; flex-direction: column;
+  align-items: center; padding: 6px 2px;
+  overflow-y: auto; gap: 2px;
+  z-index: 12; transition: width 0.25s ease;
+}
+.group-sidebar.expanded { width: 110px; }
+
+.group-items {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px; width: 100%; flex: 1;
+}
+.group-item {
+  width: 100%; display: flex; align-items: center;
+  gap: 6px; padding: 8px 6px; border-radius: 10px;
+  cursor: pointer; transition: background 0.15s;
+  font-size: 11px; color: #8B7355; position: relative;
+  justify-content: center;
+}
+.group-sidebar.expanded .group-item { justify-content: flex-start; }
+.group-item .group-icon { font-size: 17px; flex-shrink: 0; }
+.group-item .group-name {
+  display: none; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; font-size: 11px; font-weight: 500;
+}
+.group-sidebar.expanded .group-item .group-name { display: inline; }
+.group-item .group-count {
+  display: none; font-size: 10px; color: #b8a59a; margin-left: auto;
+  background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 8px;
+}
+.group-sidebar.expanded .group-item .group-count { display: inline; }
+
+.group-item.active {
+  background: rgba(255,140,105,0.15);
+  color: #FF8C69; font-weight: 600;
+}
+.group-item:active { background: rgba(255,140,105,0.25); }
+
+.group-add-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px dashed #d0c8c0; background: none; color: #b8a59a;
+  font-size: 16px; cursor: pointer; flex-shrink: 0; margin-top: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.group-add-btn:active { border-color: #FF8C69; color: #FF8C69; }
+
+/* Group context menu */
+.group-ctx-menu {
+  position: fixed; z-index: 80; background: #fff; border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15); padding: 6px;
+  display: none; flex-direction: column; min-width: 100px;
+}
+.group-ctx-menu.active { display: flex; }
+.group-ctx-menu button {
+  border: none; background: none; padding: 8px 14px;
+  font-size: 13px; cursor: pointer; text-align: left;
+  border-radius: 8px; color: #4A3728;
+}
+.group-ctx-menu button:active { background: #f5f0eb; }
+.group-ctx-menu button.danger { color: #FF6B6B; }
+
+/* ====== Select Mode ====== */
+.select-toolbar {
+  display: none; align-items: center; gap: 6px;
+  padding: 8px 10px; background: #fff;
+  border-bottom: 1px solid #f0e8e0;
+  font-size: 12px; z-index: 8; position: sticky; top: 0;
+  flex-wrap: wrap;
+}
+.select-toolbar.visible { display: flex; }
+.select-toolbar button {
+  padding: 5px 10px; border-radius: 8px; border: none;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.select-toolbar .st-count { color: #8B7355; font-weight: 600; }
+.select-toolbar .st-danger { background: #FF6B6B; color: #fff; }
+.select-toolbar .st-cancel { background: #f0e8e0; color: #8B7355; }
+.select-toolbar .st-all { background: #f0e8e0; color: #4A3728; }
+.select-toolbar .st-move {
+  background: rgba(255,140,105,0.12); color: #FF8C69; font-size: 11px;
+}
+
+.select-checkbox {
+  position: absolute; top: 5px; right: 5px;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.3);
+  display: none; align-items: center; justify-content: center;
+  font-size: 10px; z-index: 5; transition: all 0.15s;
+  color: transparent;
+}
+.select-checkbox.visible { display: flex; }
+.select-checkbox.checked {
+  background: #FF6B6B; border-color: #FF6B6B; color: #fff;
+}
+.scatter-card.select-mode, .scatter-page-card.select-mode {
+  transform: none !important; opacity: 0.85;
+}
+
+/* ====== Immersive Animations ====== */
+/* Cards get subtle breathing via box-shadow pulse (avoids overriding inline transform) */
+.scatter-card {
+  animation: cardGlow 4s ease-in-out infinite;
+}
+@keyframes cardGlow {
+  0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06); }
+  50% { box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06), 0 0 18px rgba(255,140,105,0.15); }
+}
+
+.scatter-page-card {
+  animation: cardGlowPage 5s ease-in-out infinite;
+}
+@keyframes cardGlowPage {
+  0%, 100% { box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06); }
+  50% { box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06), 0 0 14px rgba(255,140,105,0.12); }
+}
+
+/* Draw button glow */
+.big-draw-btn {
+  position: relative;
+}
+.big-draw-btn::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 53px;
+  background: transparent; box-shadow: 0 0 16px rgba(255,140,105,0.35);
+  opacity: 0; transition: opacity 0.3s;
+}
+.big-draw-btn:hover::after, .big-draw-btn:active::after { opacity: 1; }
+
+/* Shuffle button spin */
+@keyframes shuffleSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Background breathing */
+#app {
+  background: linear-gradient(180deg, #FFF5EE 0%, #FFF8F0 30%, #FFF0E5 60%, #FFE8DC 100%);
+  background-size: 100% 200%;
+  animation: bgBreathe 12s ease-in-out infinite;
+}
+@keyframes bgBreathe {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 0% 100%; }
+}
+
+/* Empty state emoji breathing */
+.empty-state .empty-emoji {
+  animation: breatheEmoji 3s ease-in-out infinite;
+}
+@keyframes breatheEmoji {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+/* Magic dust particles in scatter area */
+.scatter-area::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255,140,105,0.3), transparent),
+    radial-gradient(2px 2px at 60% 50%, rgba(255,173,77,0.25), transparent),
+    radial-gradient(3px 3px at 80% 20%, rgba(218,119,242,0.2), transparent),
+    radial-gradient(2px 2px at 40% 70%, rgba(255,140,105,0.2), transparent),
+    radial-gradient(3px 3px at 70% 80%, rgba(255,211,59,0.25), transparent),
+    radial-gradient(1px 1px at 10% 60%, rgba(255,140,105,0.3), transparent),
+    radial-gradient(2px 2px at 50% 10%, rgba(218,119,242,0.2), transparent),
+    radial-gradient(2px 2px at 90% 45%, rgba(255,173,77,0.2), transparent);
+  animation: dustDrift 20s linear infinite;
+  opacity: 0.5;
+}
+@keyframes dustDrift {
+  0% { transform: translateY(0) translateX(0); opacity: 0.4; }
+  25% { transform: translateY(-6px) translateX(3px); opacity: 0.7; }
+  50% { transform: translateY(-3px) translateX(-2px); opacity: 0.3; }
+  75% { transform: translateY(-9px) translateX(1px); opacity: 0.6; }
+  100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+}
+
 /* ====== Bottom Nav ====== */
 .bottom-nav {
   display: flex; justify-content: center; gap: 28px;
@@ -254,35 +436,6 @@ body {
   font-size: 10px; color: #b8a59a; text-align: center; margin-top: 2px;
 }
 .nav-item { display: flex; flex-direction: column; align-items: center; }
-
-/* ====== Recording Overlay ====== */
-.recording-overlay {
-  position: fixed; inset: 0; z-index: 60;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none; opacity: 0; transition: opacity 0.25s;
-}
-.recording-overlay.active { opacity: 1; pointer-events: auto; }
-.recording-bg {
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at center, rgba(255,140,105,0.15), rgba(0,0,0,0.5));
-}
-.recording-mic {
-  width: 100px; height: 100px; border-radius: 50%;
-  background: linear-gradient(135deg, #FF8C69, #FF6B6B);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 44px; z-index: 1; position: relative;
-  box-shadow: 0 0 0 0 rgba(255,140,105,0.5);
-  animation: micPulse 1.2s ease-out infinite;
-}
-@keyframes micPulse {
-  0% { box-shadow: 0 0 0 0 rgba(255,140,105,0.5); }
-  100% { box-shadow: 0 0 0 40px rgba(255,140,105,0); }
-}
-.recording-hint {
-  position: absolute; bottom: 25%; color: #fff;
-  font-size: 16px; font-weight: 600; z-index: 1;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
 
 /* ====== Action Overlay ====== */
 .action-overlay {
@@ -516,19 +669,20 @@ body {
 	.draw-overlay-label {
 	  font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 16px;
 	}
-	.draw-overlay-dismiss {
-	  margin-top: 20px; padding: 10px 32px; border: 2px solid rgba(255,255,255,0.5);
-	  border-radius: 50px; background: rgba(255,255,255,0.15); color: #fff;
-	  font-size: 15px; font-weight: 600; cursor: pointer;
-	  transition: background 0.2s;
+	.draw-overlay-actions {
+	  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;
 	}
+	.draw-overlay-dismiss, .draw-overlay-edit, .draw-overlay-convert, .draw-overlay-delete {
+	  padding: 10px 16px; border-radius: 50px; font-size: 14px; font-weight: 600;
+	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
+	}
+	.draw-overlay-dismiss { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); color: #fff; }
 	.draw-overlay-dismiss:active { background: rgba(255,255,255,0.3); }
-	.draw-overlay-delete {
-	  margin-top: 8px; padding: 10px 32px; border: 2px solid rgba(255,107,107,0.5);
-	  border-radius: 50px; background: rgba(255,107,107,0.2); color: #FF6B6B;
-	  font-size: 15px; font-weight: 600; cursor: pointer;
-	  transition: background 0.2s;
-	}
+	.draw-overlay-edit { border-color: rgba(255,211,59,0.5); background: rgba(255,211,59,0.15); color: #FFD43B; }
+	.draw-overlay-edit:active { background: rgba(255,211,59,0.3); }
+	.draw-overlay-convert { border-color: rgba(56,178,172,0.5); background: rgba(56,178,172,0.15); color: #38B2AC; }
+	.draw-overlay-convert:active { background: rgba(56,178,172,0.3); }
+	.draw-overlay-delete { border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.2); color: #FF6B6B; }
 	.draw-overlay-delete:active { background: rgba(255,107,107,0.4); }
 
 	/* ====== Review Overlay (逐个回顾) ====== */
@@ -581,8 +735,17 @@ body {
     </div>
   </div>
 
-  <!-- Views -->
-  <div class="views-wrapper">
+  <!-- Group Sidebar + Views -->
+  <div class="main-content" style="display:flex; flex:1; overflow:hidden;">
+    <!-- Left Group Sidebar -->
+    <div class="group-sidebar" id="groupSidebar">
+      <div class="group-items" id="groupItems">
+              </div>
+      <button class="group-add-btn" id="groupAddBtn" title="新建分组">+</button>
+    </div>
+
+    <!-- Views -->
+    <div class="views-wrapper" style="flex:1; min-width:0;">
     <div class="views-slider" id="viewsSlider">
       <!-- Inspiration Can View -->
       <div class="view" id="inspirationView">
@@ -591,13 +754,20 @@ body {
           <input type="text" id="pullInput" placeholder="输入一个灵感..." maxlength="80">
           <button id="pullSubmit">✓</button>
         </div>
-        <div class="scatter-area" id="scatterArea">
+        <div class="select-toolbar" id="selectToolbar">
+            <button class="st-all" id="selectAllBtn">全选</button>
+            <span class="st-count" id="selectCount">已选 0 项</span>
+            <button class="st-move" id="selectMoveBtn">📁 移动到...</button>
+            <button class="st-danger" id="batchDeleteBtn">🗑 删除选中</button>
+            <button class="st-danger" id="deleteAllBtn" style="background:#e03131;">⚠️ 全部删除</button>
+            <button class="st-cancel" id="cancelSelectBtn">取消</button>
+          </div>
+          <div class="scatter-area" id="scatterArea">
           <div class="empty-state" id="inspirationEmpty">
             <div class="empty-emoji">🫙</div>
             <div class="empty-text">
               罐头还是空的<br>
-              长按这里录音，或下拉输入<br>
-              把有趣的念头丢进来吧
+              下拉输入，把有趣的念头丢进来吧
             </div>
           </div>
         </div>
@@ -605,26 +775,13 @@ body {
           <button class="big-draw-btn inspiration-btn" id="drawBtn">
             🎲 抽一个灵感
           </button>
-          <button id="shakeBtn" title="摇一摇（桌面版）"
-            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
-                   border: 2px solid #FF8C69; background: #fff; color: #FF8C69;
-                   font-size: 20px; cursor: pointer; transition: transform 0.15s;
-                   display: flex; align-items: center; justify-content: center;">
-            📳
-          </button>
           <button id="shuffleBtn" title="刷新排列"
-            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
-                   border: 2px solid #FF8C69; background: #fff; color: #FF8C69;
-                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
-                   display: none; align-items: center; justify-content: center;">
+            style="margin-left: 12px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid rgba(255,140,105,0.35); background: rgba(255,140,105,0.08);
+                   color: #FF8C69; font-size: 18px; cursor: pointer;
+                   transition: transform 0.15s, background 0.2s;
+                   display: flex; align-items: center; justify-content: center;">
             🔄
-          </button>
-          <button id="reviewInspBtn" title="逐个回顾"
-            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
-                   border: 2px solid #6C5CE7; background: #fff; color: #6C5CE7;
-                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
-                   display: none; align-items: center; justify-content: center;">
-            🔍
           </button>
         </div>
       </div>
@@ -636,13 +793,20 @@ body {
           <input type="text" id="notesPullInput" placeholder="写一张情绪小纸条..." maxlength="80">
           <button id="notesPullSubmit">✓</button>
         </div>
-        <div class="scatter-area" id="notesScatterArea">
+        <div class="select-toolbar" id="notesSelectToolbar">
+            <button class="st-all" id="notesSelectAllBtn">全选</button>
+            <span class="st-count" id="notesSelectCount">已选 0 项</span>
+            <button class="st-move" id="notesSelectMoveBtn">📁 移动到...</button>
+            <button class="st-danger" id="notesBatchDeleteBtn">🗑 删除选中</button>
+            <button class="st-danger" id="notesDeleteAllBtn" style="background:#e03131;">⚠️ 全部删除</button>
+            <button class="st-cancel" id="notesCancelSelectBtn">取消</button>
+          </div>
+          <div class="scatter-area" id="notesScatterArea">
           <div class="empty-state" id="notesEmpty">
             <div class="empty-emoji">💌</div>
             <div class="empty-text">
               还没有小纸条<br>
-              长按这里录音，或下拉输入<br>
-              把此刻的情绪写下来吧
+              下拉输入，把此刻的情绪写下来吧
             </div>
           </div>
         </div>
@@ -651,18 +815,12 @@ body {
             🎲 抽一张小纸条
           </button>
           <button id="notesShuffleBtn" title="刷新排列"
-            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
-                   border: 2px solid #DA77F2; background: #fff; color: #DA77F2;
-                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
-                   display: none; align-items: center; justify-content: center;">
+            style="margin-left: 12px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid rgba(218,119,242,0.35); background: rgba(218,119,242,0.08);
+                   color: #DA77F2; font-size: 18px; cursor: pointer;
+                   transition: transform 0.15s, background 0.2s;
+                   display: flex; align-items: center; justify-content: center;">
             🔄
-          </button>
-          <button id="reviewNotesBtn" title="逐个回顾"
-            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
-                   border: 2px solid #6C5CE7; background: #fff; color: #6C5CE7;
-                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
-                   display: none; align-items: center; justify-content: center;">
-            🔍
           </button>
         </div>
       </div>
@@ -696,6 +854,7 @@ body {
       </div>
     </div>
   </div>
+  </div><!-- /main-content -->
 
   <!-- Bottom Nav -->
   <div class="bottom-nav">
@@ -718,13 +877,6 @@ body {
       <div class="nav-label">动作开关</div>
     </div>
   </div>
-</div>
-
-<!-- Recording Overlay -->
-<div class="recording-overlay" id="recordingOverlay">
-  <div class="recording-bg"></div>
-  <div class="recording-mic">🎤</div>
-  <div class="recording-hint">正在聆听... 松手完成</div>
 </div>
 
 <!-- Action Overlay -->
@@ -854,8 +1006,12 @@ body {
   <div class="draw-overlay-card" id="drawOverlayCard">
     <div class="draw-overlay-label">🎲 抽到了！</div>
     <div id="drawOverlayText"></div>
-    <button class="draw-overlay-dismiss" id="drawOverlayDismiss">放回去</button>
-    <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
+    <div class="draw-overlay-actions">
+      <button class="draw-overlay-dismiss" id="drawOverlayDismiss">放回去</button>
+      <button class="draw-overlay-edit" id="drawOverlayEdit">✏️ 编辑</button>
+      <button class="draw-overlay-convert" id="drawOverlayConvert">🤏 转动作</button>
+      <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
+    </div>
   </div>
 </div>
 
@@ -1078,6 +1234,10 @@ const CardManager = {
   _actionCards: [],
   _deletedItems: [],
   _nextId: 1,
+  _groups: [
+    { id: 'default-i', name: '全部', icon: '🫙', color: '#FF8C69', type: 'inspiration' },
+    { id: 'default-n', name: '全部', icon: '💌', color: '#DA77F2', type: 'notes' },
+  ],
 
   init() {
     try {
@@ -1088,6 +1248,10 @@ const CardManager = {
         this._actionCards = saved.actionCards || [];
         this._deletedItems = saved.deletedItems || [];
         this._nextId = saved.nextId || 1;
+        this._groups = saved.groups || [
+          { id: 'default-i', name: '全部', icon: '🫙', color: '#FF8C69', type: 'inspiration' },
+          { id: 'default-n', name: '全部', icon: '💌', color: '#DA77F2', type: 'notes' },
+        ];
       }
     } catch(e) {}
   },
@@ -1100,18 +1264,95 @@ const CardManager = {
         actionCards: this._actionCards,
         deletedItems: this._deletedItems.slice(-30),
         nextId: this._nextId,
+        groups: this._groups,
       }));
     } catch(e) {}
   },
 
+  // ---- Groups ----
+  getGroups(type) {
+    if (!type) return [...this._groups];
+    const defaultId = type === 'notes' ? 'default-n' : 'default-i';
+    return this._groups.filter(g => g.type === type || g.id === defaultId);
+  },
+
+  addGroup(name, icon, color, type) {
+    const id = 'g' + Date.now();
+    const g = { id, name, icon: icon || '📌', color: color || '#FF8C69', type: type || 'inspiration' };
+    this._groups.push(g);
+    this.save();
+    return g;
+  },
+
+  removeGroup(id) {
+    if (id === 'default-i' || id === 'default-n') return;
+    this._groups = this._groups.filter(g => g.id !== id);
+    // 把该分组的卡片移回各自默认
+    this._inspirationCards.forEach(c => { if (c.groupId === id) c.groupId = 'default-i'; });
+    this._notesCards.forEach(c => { if (c.groupId === id) c.groupId = 'default-n'; });
+    this.save();
+  },
+
+  renameGroup(id, name) {
+    const g = this._groups.find(g => g.id === id);
+    if (g) { g.name = name; this.save(); }
+  },
+
+  getDefaultGroupId(type) {
+    return type === 'notes' ? 'default-n' : 'default-i';
+  },
+
+  getInspirationCardsByGroup(groupId) {
+    if (!groupId || groupId === 'default-i') return this.getInspirationCards();
+    return this._inspirationCards.filter(c => (c.groupId || 'default-i') === groupId);
+  },
+
+  getNotesCardsByGroup(groupId) {
+    if (!groupId || groupId === 'default-n') return this.getNotesCards();
+    return this._notesCards.filter(c => (c.groupId || 'default-n') === groupId);
+  },
+
+  moveCardsToGroup(ids, type, groupId) {
+    const arr = type === 'notes' ? this._notesCards : this._inspirationCards;
+    ids.forEach(id => {
+      const c = arr.find(c => c.id === id);
+      if (c) c.groupId = groupId;
+    });
+    this.save();
+  },
+
+  // ---- Batch Delete ----
+  removeInspirations(ids) {
+    const idSet = new Set(ids);
+    this._inspirationCards.forEach(c => {
+      if (idSet.has(c.id)) {
+        this._deletedItems.push({ ...c, type: 'inspiration', deletedAt: Date.now() });
+      }
+    });
+    this._inspirationCards = this._inspirationCards.filter(c => !idSet.has(c.id));
+    this.save();
+  },
+
+  removeNotes(ids) {
+    const idSet = new Set(ids);
+    this._notesCards.forEach(c => {
+      if (idSet.has(c.id)) {
+        this._deletedItems.push({ ...c, type: 'note', deletedAt: Date.now() });
+      }
+    });
+    this._notesCards = this._notesCards.filter(c => !idSet.has(c.id));
+    this.save();
+  },
+
   // ---- Inspiration Cards ----
-  addInspiration(text, color) {
+  addInspiration(text, color, groupId) {
     const card = {
       id: this._nextId++,
       text: text || this._randomInspiration(),
       color: color || CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
       createdAt: Date.now(),
       bingoCount: 0,
+      groupId: groupId || 'default-i',
     };
     this._inspirationCards.unshift(card);
     this.save();
@@ -1141,13 +1382,14 @@ const CardManager = {
   },
 
   // ---- Notes Cards (情绪小纸条) ----
-  addNote(text, color) {
+  addNote(text, color, groupId) {
     const card = {
       id: this._nextId++,
       text: text || this._randomNote(),
       color: color || NOTES_COLORS[Math.floor(Math.random() * NOTES_COLORS.length)],
       createdAt: Date.now(),
       bingoCount: 0,
+      groupId: groupId || 'default-n',
     };
     this._notesCards.unshift(card);
     this.save();
@@ -1362,10 +1604,33 @@ const UIController = {
   selectedCardView: null, // 'inspiration' or 'notes'
   _batchDelimiter: '\n',
   _notesBatchDelimiter: '\n',
+  _currentInspGroup: 'default-i',  // 灵感罐头当前分组
+  _currentNotesGroup: 'default-n', // 情绪小纸条当前分组
+  _selectMode: false,         // 批量选择模式
+  _selectedCards: new Set(),  // 选中的卡片 ID 集合
+
+  _getCurrentGroupId() {
+    return this.currentView === 'notes' ? this._currentNotesGroup : this._currentInspGroup;
+  },
+
+  _setCurrentGroup(groupId) {
+    if (this.currentView === 'notes') {
+      this._currentNotesGroup = groupId;
+    } else {
+      this._currentInspGroup = groupId;
+    }
+  },
+
+  _isDefaultGroup(groupId) {
+    if (!groupId) return true;
+    if (this.currentView === 'notes') return groupId === 'default-n';
+    return groupId === 'default-i';
+  },
 
   init() {
     CardManager.init();
     this.renderAll();
+    this._renderGroupSidebar();
     this.bindEvents();
     this.setupCamera();
   },
@@ -1374,6 +1639,8 @@ const UIController = {
   switchView(view) {
     if (this.currentView === view) return;
     this.currentView = view;
+    // 切换视图时退出选择模式
+    if (this._selectMode) this.toggleSelectMode();
     AudioEngine.swoosh();
     VibrationEngine.cardTapVibe();
 
@@ -1415,7 +1682,260 @@ const UIController = {
     }
 
     this.deselectCard();
+    this._renderGroupSidebar();
     this.renderCards();
+  },
+
+  // ---- Group Sidebar ----
+  _renderGroupSidebar() {
+    const container = document.getElementById('groupItems');
+    const isNotes = this.currentView === 'notes';
+    const type = isNotes ? 'notes' : 'inspiration';
+    const groups = CardManager.getGroups(type);
+    const cards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    const defaultId = CardManager.getDefaultGroupId(type);
+
+    container.innerHTML = groups.map(g => {
+      const count = g.id === defaultId
+        ? cards.length
+        : cards.filter(c => (c.groupId || defaultId) === g.id).length;
+      const isActive = this._getCurrentGroupId() === g.id;
+      return `<div class="group-item${isActive ? ' active' : ''}" data-group="${g.id}"
+        title="${g.name} (${count})">
+        <span class="group-icon">${g.icon}</span>
+        <span class="group-name">${g.name}</span>
+        <span class="group-count">${count}</span>
+      </div>`;
+    }).join('');
+
+    // 绑定点击事件
+    container.querySelectorAll('.group-item').forEach(item => {
+      item.addEventListener('click', () => this.selectGroup(item.dataset.group));
+      item.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this._showGroupContextMenu(e, item.dataset.group);
+      });
+      // 长按
+      let timer;
+      item.addEventListener('touchstart', () => {
+        timer = setTimeout(() => {
+          this._showGroupContextMenu({ clientX: item.getBoundingClientRect().left + 40, clientY: item.getBoundingClientRect().bottom }, item.dataset.group);
+        }, 600);
+      });
+      item.addEventListener('touchend', () => clearTimeout(timer));
+      item.addEventListener('touchmove', () => clearTimeout(timer));
+    });
+  },
+
+  selectGroup(groupId) {
+    // 如果有选中的卡片，点击分组 → 移动卡片到该分组
+    if (this.selectedCardId && !this._isDefaultGroup(groupId)) {
+      const type = this.selectedCardView === 'notes' ? 'notes' : 'inspiration';
+      CardManager.moveCardsToGroup([this.selectedCardId], type, groupId);
+      const g = CardManager.getGroups(type).find(g => g.id === groupId);
+      this.showFloatingText('已移动到 ' + (g ? g.name : '分组') + '！📁');
+      this.deselectCard();
+      this._setCurrentGroup(groupId);
+      this._renderGroupSidebar();
+      this.renderCards();
+      return;
+    }
+    this._setCurrentGroup(groupId);
+    this._renderGroupSidebar();
+    this.renderCards();
+  },
+
+  _showGroupContextMenu(e, groupId) {
+    let menu = document.getElementById('groupCtxMenu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'groupCtxMenu';
+      menu.className = 'group-ctx-menu';
+      document.body.appendChild(menu);
+    }
+    const type = this.currentView === 'notes' ? 'notes' : 'inspiration';
+    const g = CardManager.getGroups(type).find(g => g.id === groupId);
+    if (!g) return;
+    const isDefault = this._isDefaultGroup(groupId);
+    menu.innerHTML = `
+      <button data-action="rename">✏️ 重命名</button>
+      ${isDefault ? '' : '<button data-action="delete" class="danger">🗑 删除分组</button>'}
+    `;
+    menu.style.left = Math.min(e.clientX, window.innerWidth - 120) + 'px';
+    menu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
+    menu.classList.add('active');
+
+    const hide = () => { menu.classList.remove('active'); menu.replaceChildren(); };
+    menu.querySelector('[data-action="rename"]')?.addEventListener('click', () => {
+      hide();
+      const name = prompt('分组名称：', g.name);
+      if (name && name.trim()) CardManager.renameGroup(groupId, name.trim());
+      this._renderGroupSidebar();
+    });
+    menu.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+      hide();
+      if (confirm('确定删除该分组？卡片将移回"全部"。')) {
+        CardManager.removeGroup(groupId);
+        if (this._getCurrentGroupId() === groupId) this._setCurrentGroup(this.currentView === 'notes' ? 'default-n' : 'default-i');
+        this._renderGroupSidebar();
+        this.renderCards();
+      }
+    });
+    setTimeout(() => document.addEventListener('click', function h() { hide(); document.removeEventListener('click', h); }), 50);
+  },
+
+  // ---- Batch Select Mode ----
+  toggleSelectMode() {
+    this._selectMode = !this._selectMode;
+    if (!this._selectMode) this._selectedCards.clear();
+    const toolbars = document.querySelectorAll('.select-toolbar');
+    toolbars.forEach(tb => tb.classList.toggle('visible', this._selectMode));
+    if (!this._selectMode) this.renderCards();
+    this._updateSelectCount();
+  },
+
+  _updateSelectCount() {
+    document.querySelectorAll('.st-count').forEach(el => {
+      el.textContent = '已选 ' + this._selectedCards.size + ' 项';
+    });
+  },
+
+  _selectAllCards() {
+    const areaId = this.currentView === 'notes' ? 'notesScatterArea' : 'scatterArea';
+    const area = document.getElementById(areaId);
+    const cards = area.querySelectorAll('.scatter-card, .scatter-page-card');
+    cards.forEach(card => {
+      const id = parseInt(card.dataset.id);
+      if (id) this._selectedCards.add(id);
+    });
+    this._updateSelectCount();
+    this.renderCards();
+  },
+
+  _toggleCardSelection(cardId) {
+    if (this._selectedCards.has(cardId)) {
+      this._selectedCards.delete(cardId);
+    } else {
+      this._selectedCards.add(cardId);
+    }
+    this._updateSelectCount();
+    // 更新复选框视觉
+    document.querySelectorAll(`.select-checkbox[data-id="${cardId}"]`).forEach(cb => {
+      cb.classList.toggle('checked', this._selectedCards.has(cardId));
+    });
+  },
+
+  batchDelete() {
+    if (this._selectedCards.size === 0) return;
+    if (!confirm(`确定删除选中的 ${this._selectedCards.size} 个念头？`)) return;
+    const ids = Array.from(this._selectedCards);
+    const isNotes = this.currentView === 'notes';
+    if (isNotes) {
+      CardManager.removeNotes(ids);
+    } else {
+      CardManager.removeInspirations(ids);
+    }
+    this._selectedCards.clear();
+    this.toggleSelectMode();
+    this._renderGroupSidebar();
+    this.renderAll();
+    this.showFloatingText('已删除 ' + ids.length + ' 个！🗑️');
+  },
+
+  deleteAll() {
+    const isNotes = this.currentView === 'notes';
+    const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    const cards = this._getCurrentGroupId() === (isNotes ? 'default-n' : 'default-i')
+      ? allCards
+      : allCards.filter(c => (c.groupId || (isNotes ? 'default-n' : 'default-i')) === this._getCurrentGroupId());
+    if (cards.length === 0) {
+      this.showFloatingText('没有可删除的~');
+      return;
+    }
+    const label = this._isDefaultGroup(this._getCurrentGroupId()) ? '全部' : '当前分组';
+    if (!confirm(`⚠️ 确定删除【${label}】的 ${cards.length} 个念头？此操作不可恢复！`)) return;
+    const ids = cards.map(c => c.id);
+    if (isNotes) {
+      CardManager.removeNotes(ids);
+    } else {
+      CardManager.removeInspirations(ids);
+    }
+    this._selectedCards.clear();
+    if (this._selectMode) this.toggleSelectMode();
+    this._renderGroupSidebar();
+    this.renderAll();
+    this.showFloatingText('已全部删除！🗑️');
+  },
+
+  batchMoveToGroup(groupId) {
+    if (this._selectedCards.size === 0) return;
+    const ids = Array.from(this._selectedCards);
+    const isNotes = this.currentView === 'notes';
+    CardManager.moveCardsToGroup(ids, isNotes ? 'notes' : 'inspiration', groupId);
+    this._selectedCards.clear();
+    this.toggleSelectMode();
+    this._renderGroupSidebar();
+    this.renderAll();
+    const gtype2 = this.currentView === 'notes' ? 'notes' : 'inspiration';
+    const g = CardManager.getGroups(gtype2).find(g => g.id === groupId);
+    this.showFloatingText('已移动 ' + ids.length + ' 个到 ' + (g ? g.name : '') + '！📁');
+  },
+
+  // 编辑卡片文字
+  editCardText(cardId, type) {
+    const cards = type === 'notes' ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+    const newText = prompt('编辑文字：', card.text);
+    if (newText && newText.trim()) {
+      card.text = newText.trim();
+      CardManager.save();
+      this.renderAll();
+      this.showFloatingText('已更新！✏️');
+    }
+  },
+
+  // 单卡片移动分组选择器
+  _showMoveGroupPicker(cardId, type) {
+    const groups = CardManager.getGroups(type);
+    const names = groups.map((g, i) => `${i + 1}. ${g.icon} ${g.name}`).join('\n');
+    const choice = prompt('移动到哪个分组？（输入编号）\n\n0. 取消\n' + names);
+    if (choice && choice !== '0') {
+      const idx = parseInt(choice) - 1;
+      if (idx >= 0 && idx < groups.length) {
+        const ids = [cardId];
+        CardManager.moveCardsToGroup(ids, type, groups[idx].id);
+        this.renderAll();
+        this._renderGroupSidebar();
+        this.showFloatingText('已移动到 ' + groups[idx].name + '！📁');
+      }
+    }
+  },
+
+  _bindSelectToolbar(allId, moveId, deleteId, cancelId, deleteAllId) {
+    const allBtn = document.getElementById(allId);
+    const moveBtn = document.getElementById(moveId);
+    const deleteBtn = document.getElementById(deleteId);
+    const cancelBtn = document.getElementById(cancelId);
+    const deleteAllBtn = document.getElementById(deleteAllId);
+
+    if (allBtn) allBtn.addEventListener('click', () => this._selectAllCards());
+    if (deleteBtn) deleteBtn.addEventListener('click', () => this.batchDelete());
+    if (cancelBtn) cancelBtn.addEventListener('click', () => this.toggleSelectMode());
+    if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAll());
+    if (moveBtn) moveBtn.addEventListener('click', () => {
+      if (this._selectedCards.size === 0) return;
+      const mvgtype = this.currentView === 'notes' ? 'notes' : 'inspiration';
+      const groups = CardManager.getGroups(mvgtype);
+      const names = groups.map((g, i) => `${i + 1}. ${g.name}`).join('\n');
+      const choice = prompt('选择目标分组（输入编号）：\n' + names);
+      if (choice) {
+        const idx = parseInt(choice) - 1;
+        if (idx >= 0 && idx < groups.length) {
+          this.batchMoveToGroup(groups[idx].id);
+        }
+      }
+    });
   },
 
   // ---- Rendering ----
@@ -1444,13 +1964,6 @@ const UIController = {
     const viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
     const viewEl2 = document.getElementById(viewId2);
     if (viewEl2) viewEl2.classList.remove('has-stack');
-    // 隐藏刷新排列按钮
-    const shuffleId2 = areaId === 'notesScatterArea' ? 'notesShuffleBtn' : 'shuffleBtn';
-    const reviewId2 = areaId === 'notesScatterArea' ? 'reviewNotesBtn' : 'reviewInspBtn';
-    const shuffleBtn2 = document.getElementById(shuffleId2);
-    const reviewBtn2 = document.getElementById(reviewId2);
-    if (shuffleBtn2) shuffleBtn2.style.display = 'none';
-    if (reviewBtn2) reviewBtn2.style.display = 'none';
 
     // Remove existing cards, keep empty state
     area.querySelectorAll('.scatter-card').forEach(el => el.remove());
@@ -1472,6 +1985,7 @@ const UIController = {
       const el = document.createElement('div');
       el.className = 'scatter-card';
       if (selectedCardId === card.id) el.classList.add('selected');
+      if (this._selectMode) el.classList.add('select-mode');
       el.dataset.id = card.id;
       el.dataset.view = areaId === 'scatterArea' ? 'inspiration' : 'notes';
       el.style.backgroundColor = card.color;
@@ -1493,10 +2007,17 @@ const UIController = {
       el.style.zIndex = i;
 
       const isNotes = areaId === 'notesScatterArea';
+      const defId = isNotes ? 'default-n' : 'default-i';
+      const g = (card.groupId && card.groupId !== defId) ? CardManager.getGroups().find(g => g.id === card.groupId) : null;
+      const groupBadge = g ? `<span class="card-group-badge" style="background:${g.color}20;color:${g.color};font-size:10px;padding:1px 5px;border-radius:6px;margin-bottom:4px;display:inline-block;">${g.icon} ${g.name}</span>` : '';
 
       el.innerHTML = `
+        <div class="select-checkbox${this._selectMode ? ' visible' : ''}${this._selectedCards.has(card.id) ? ' checked' : ''}" data-id="${card.id}">✓</div>
+        ${groupBadge}
         <span>${this.escapeHtml(card.text)}</span>
         <div class="card-actions">
+          <button class="card-action-btn" data-action="edit" title="编辑">✏️</button>
+          <button class="card-action-btn" data-action="move-group" title="移动分组">📁</button>
           <button class="card-action-btn" data-action="convert" title="转为动作">🤏</button>
           <button class="card-action-btn" data-action="dismiss" title="划掉">✕</button>
         </div>
@@ -1505,10 +2026,38 @@ const UIController = {
       // Click to select
       el.addEventListener('click', (e) => {
         if (e.target.closest('.card-action-btn')) return;
+        if (e.target.closest('.select-checkbox')) {
+          this._toggleCardSelection(card.id);
+          return;
+        }
+        if (this._selectMode) {
+          this._toggleCardSelection(card.id);
+          return;
+        }
         this.selectCard(card.id, el, isNotes ? 'notes' : 'inspiration');
       });
 
+      // Long press → enter select mode
+      let longPressTimer;
+      el.addEventListener('touchstart', () => {
+        longPressTimer = setTimeout(() => {
+          if (!this._selectMode) this.toggleSelectMode();
+          this._toggleCardSelection(card.id);
+          VibrationEngine.confirmVibe();
+        }, 600);
+      });
+      el.addEventListener('touchend', () => clearTimeout(longPressTimer));
+      el.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+
       // Action buttons
+      el.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editCardText(card.id, isNotes ? 'notes' : 'inspiration');
+      });
+      el.querySelector('[data-action="move-group"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._showMoveGroupPicker(card.id, isNotes ? 'notes' : 'inspiration');
+      });
       el.querySelector('[data-action="convert"]').addEventListener('click', (e) => {
         e.stopPropagation();
         if (isNotes) {
@@ -1561,13 +2110,6 @@ const UIController = {
     // 切换为可滚动模式，固定底部按钮
     if (view) view.classList.add('has-stack');
     area.style.minHeight = 'auto';
-    // 显示刷新排列按钮和回顾按钮
-    const shuffleId = isNotes ? 'notesShuffleBtn' : 'shuffleBtn';
-    const reviewId = isNotes ? 'reviewNotesBtn' : 'reviewInspBtn';
-    const shuffleBtn = document.getElementById(shuffleId);
-    const reviewBtn = document.getElementById(reviewId);
-    if (shuffleBtn) shuffleBtn.style.display = 'flex';
-    if (reviewBtn) reviewBtn.style.display = 'flex';
 
     // 初始化分页状态
     const PAGE_SIZE = 12;
@@ -1626,9 +2168,18 @@ const UIController = {
       const rotation = (Math.random() - 0.5) * 12;
 
       const text = self.escapeHtml(card.text);
-      html += '<div class="scatter-page-card" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';left:' + (baseX + offsetX) + 'px;top:' + (baseY + offsetY) + 'px;transform:rotate(' + rotation + 'deg);">';
-      html += '<span class="page-card-text">' + text + '</span>';
+      const selClass = self._selectMode ? ' select-mode' : '';
+      const cbClass = self._selectMode ? ' visible' : '';
+      const cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
+      html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';left:' + (baseX + offsetX) + 'px;top:' + (baseY + offsetY) + 'px;transform:rotate(' + rotation + 'deg);">';
+      const stackDefId = isNotes ? 'default-n' : 'default-i';
+      const g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(g => g.id === card.groupId) : null;
+      const groupBadge2 = g2 ? '<span style="font-size:9px;opacity:0.8;display:block;margin-bottom:3px;">' + g2.icon + ' ' + g2.name + '</span>' : '';
+      html += '<div class="select-checkbox' + cbClass + cbChecked + '" data-id="' + card.id + '">✓</div>';
+      html += groupBadge2 + '<span class="page-card-text">' + text + '</span>';
       html += '<div class="page-card-actions">';
+      html += '<button class="page-card-btn" data-action="stack-edit" title="编辑">✏️</button>';
+      html += '<button class="page-card-btn" data-action="stack-move-group" title="移动分组">📁</button>';
       html += '<button class="page-card-btn" data-action="stack-convert" title="转为动作">🤏</button>';
       html += '<button class="page-card-btn" data-action="stack-dismiss" title="删除">✕</button>';
       html += '</div></div>';
@@ -1693,7 +2244,21 @@ const UIController = {
       const action = e.target.closest('[data-action]');
       const actionType = action ? action.dataset.action : null;
 
-      if (actionType === 'stack-dismiss') {
+      // Select mode: clicking checkbox or card in select mode
+      if (e.target.closest('.select-checkbox') || self._selectMode) {
+        if (!actionType) {
+          self._toggleCardSelection(id);
+          return;
+        }
+      }
+
+      if (actionType === 'stack-edit') {
+        e.stopPropagation();
+        self.editCardText(id, isNotes ? 'notes' : 'inspiration');
+      } else if (actionType === 'stack-move-group') {
+        e.stopPropagation();
+        self._showMoveGroupPicker(id, isNotes ? 'notes' : 'inspiration');
+      } else if (actionType === 'stack-dismiss') {
         e.stopPropagation();
         card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
         card.style.transform = card.style.transform.replace(/rotate\([^)]+\)/, 'rotate(25deg)') + ' scale(0.3)';
@@ -1728,6 +2293,69 @@ const UIController = {
     });
   },
 
+  // 散落模式：重新随机排列卡片位置（带动画）
+  _shuffleScatterCards(areaId) {
+    const area = document.getElementById(areaId);
+    const cards = area.querySelectorAll('.scatter-card');
+    if (cards.length === 0) return;
+
+    const areaRect = area.getBoundingClientRect();
+    const areaW = areaRect.width || 350;
+    const cols = Math.max(2, Math.floor(areaW / 140));
+
+    cards.forEach(function(card, i) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const baseX = (areaW / (cols + 1)) * (col + 1) - 67;
+      const baseY = 20 + row * 125;
+      const offsetX = (Math.random() - 0.5) * 30;
+      const offsetY = (Math.random() - 0.5) * 20;
+      const rotation = (Math.random() - 0.5) * 14;
+
+      anime({
+        targets: card,
+        left: (baseX + offsetX) + 'px',
+        top: (baseY + offsetY) + 'px',
+        rotate: rotation + 'deg',
+        scale: [{value: 0.9, duration: 100}, {value: 1, duration: 350}],
+        duration: 450 + Math.random() * 200,
+        easing: 'easeOutElastic(1, .45)',
+      });
+    });
+
+    // 按钮旋转反馈
+    const isNotes = areaId === 'notesScatterArea';
+    const btnId = isNotes ? 'notesShuffleBtn' : 'shuffleBtn';
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.style.transform = 'rotate(360deg)';
+      btn.style.transition = 'transform 0.6s ease-in-out';
+      setTimeout(function() { btn.style.transform = 'rotate(0deg)'; }, 600);
+    }
+  },
+
+  // 统一刷新排列入口：自动检测散落/堆叠模式
+  _refreshArrangement(areaId) {
+    const isNotes = areaId === 'notesScatterArea';
+    const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+
+    if (cards.length === 0) {
+      this.showFloatingText(isNotes ? '还没有小纸条，先写一张吧~ 💌' : '罐头还是空的，先添加一些灵感吧~ 🫙');
+      AudioEngine.click();
+      return;
+    }
+
+    AudioEngine.shuffle();
+    VibrationEngine.shuffleVibe();
+
+    if (cards.length > STACK_THRESHOLD) {
+      this._shuffleStackCards(areaId);
+    } else {
+      this._shuffleScatterCards(areaId);
+    }
+  },
+
   // 重新随机排列当前已加载卡片的位置（摇一摇 / 手动刷新）
   _shuffleStackCards(areaId) {
     const area = document.getElementById(areaId);
@@ -1759,11 +2387,15 @@ const UIController = {
   },
 
   renderInspirationCards() {
-    this.renderScatterCards('scatterArea', CardManager.getInspirationCards(), this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
+    const allCards = CardManager.getInspirationCards();
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    this.renderScatterCards('scatterArea', cards, this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
   },
 
   renderNotesCards() {
-    this.renderScatterCards('notesScatterArea', CardManager.getNotesCards(), this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
+    const allCards = CardManager.getNotesCards();
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    this.renderScatterCards('notesScatterArea', cards, this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
   },
 
   renderActionCards() {
@@ -2089,9 +2721,10 @@ const UIController = {
 
   // ---- Drawing ----
   drawInspiration() {
-    const cards = CardManager.getInspirationCards();
+    const allCards = CardManager.getInspirationCards();
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
     if (cards.length === 0) {
-      this.showFloatingText('罐头还是空的，先添加一些灵感吧~ 🫙');
+      this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有灵感~ 🫙' : '罐头还是空的，先添加一些灵感吧~ 🫙');
       AudioEngine.click();
       return;
     }
@@ -2144,9 +2777,10 @@ const UIController = {
   },
 
   drawNotes() {
-    const cards = CardManager.getNotesCards();
+    const allCards = CardManager.getNotesCards();
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
     if (cards.length === 0) {
-      this.showFloatingText('还没有小纸条，先写一张吧~ 💌');
+      this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有小纸条~ 💌' : '还没有小纸条，先写一张吧~ 💌');
       AudioEngine.click();
       return;
     }
@@ -2359,7 +2993,9 @@ const UIController = {
   // ---- Adding Cards ----
   addInspirationByText(text) {
     if (!text.trim()) return;
-    const card = CardManager.addInspiration(text.trim());
+    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default';
+    const card = CardManager.addInspiration(text.trim(), undefined, groupId);
+    this._renderGroupSidebar();
     this.renderAll();
     AudioEngine.ding();
     VibrationEngine.cardTapVibe();
@@ -2382,7 +3018,9 @@ const UIController = {
 
   addNoteByText(text) {
     if (!text.trim()) return;
-    const card = CardManager.addNote(text.trim());
+    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default';
+    const card = CardManager.addNote(text.trim(), undefined, groupId);
+    this._renderGroupSidebar();
     this.renderAll();
     AudioEngine.ding();
     VibrationEngine.cardTapVibe();
@@ -2401,84 +3039,6 @@ const UIController = {
         });
       }
     }, 50);
-  },
-
-  addInspirationByVoice() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'zh-CN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.start();
-      recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        if (text) {
-          if (this.currentView === 'notes') {
-            this.addNoteByText(text);
-          } else {
-            this.addInspirationByText(text);
-          }
-          this.showFloatingText('听到啦！✨');
-        }
-        this._stopVoiceRecording();
-      };
-      recognition.onerror = () => {
-        this._stopVoiceRecording();
-        this._showVoiceFallbackInput();
-      };
-      recognition.onend = () => {
-        this._stopVoiceRecording();
-      };
-    } else {
-      this._stopVoiceRecording();
-      this._showVoiceFallbackInput();
-    }
-  },
-
-  _voiceRecorder: null,
-  _voiceStream: null,
-  _voiceChunks: [],
-
-  async _startVoiceRecording() {
-    this._voiceChunks = [];
-    try {
-      this._voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this._voiceRecorder = new MediaRecorder(this._voiceStream);
-      this._voiceRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) this._voiceChunks.push(e.data);
-      };
-      this._voiceRecorder.start();
-    } catch(e) {
-      this._voiceStream = null;
-      this._voiceRecorder = null;
-    }
-  },
-
-  _stopVoiceRecording() {
-    if (this._voiceRecorder && this._voiceRecorder.state === 'recording') {
-      this._voiceRecorder.stop();
-    }
-    if (this._voiceStream) {
-      this._voiceStream.getTracks().forEach(t => t.stop());
-      this._voiceStream = null;
-      this._voiceRecorder = null;
-    }
-  },
-
-  _showVoiceFallbackInput() {
-    const label = this.currentView === 'notes' ? '💌 说说你的情绪吧（语音识别需要 HTTPS 环境）：' : '💡 说说你的灵感吧（语音识别需要 HTTPS 环境）：';
-    const text = prompt(label, '');
-    if (text && text.trim()) {
-      if (this.currentView === 'notes') {
-        this.addNoteByText(text.trim());
-      } else {
-        this.addInspirationByText(text.trim());
-      }
-      this.showFloatingText('捕获了一个念头！✨');
-    } else {
-      this.showFloatingText('没关系，想起了再说~ 🫙');
-    }
   },
 
   addActionCard(imageDataUrl, instruction) {
@@ -2963,15 +3523,6 @@ const UIController = {
     document.getElementById('drawBtn').addEventListener('click', () => this.drawInspiration());
     document.getElementById('notesDrawBtn').addEventListener('click', () => this.drawNotes());
     document.getElementById('actionDrawBtn').addEventListener('click', () => this.drawAction());
-    document.getElementById('shakeBtn').addEventListener('click', () => {
-      if (this.currentView === 'inspiration') {
-        this.drawInspiration();
-      } else if (this.currentView === 'notes') {
-        this.drawNotes();
-      } else {
-        this.drawAction();
-      }
-    });
 
     // Action overlay
     document.getElementById('actionDoBtn').addEventListener('click', () => {
@@ -2994,6 +3545,16 @@ const UIController = {
       }
     });
 
+    // Draw overlay helpers
+    const _getDrawCardType = () => {
+      const overlay = document.getElementById('drawOverlay');
+      const card = overlay._currentCard;
+      if (!card) return null;
+      const noteCards = CardManager.getNotesCards();
+      const isNote = noteCards.some(function(c) { return c.id === card.id; });
+      return { card, isNote };
+    };
+
     // Draw overlay (stack mode card reveal)
     document.getElementById('drawOverlayDismiss').addEventListener('click', () => {
       this._closeDrawOverlay();
@@ -3005,19 +3566,37 @@ const UIController = {
         AudioEngine.click();
       }
     });
+    // Draw overlay — 编辑
+    document.getElementById('drawOverlayEdit').addEventListener('click', () => {
+      const info = _getDrawCardType();
+      if (info) {
+        this.editCardText(info.card.id, info.isNote ? 'notes' : 'inspiration');
+        this._closeDrawOverlay();
+      }
+    });
+    // Draw overlay — 转动作
+    document.getElementById('drawOverlayConvert').addEventListener('click', () => {
+      const info = _getDrawCardType();
+      if (info) {
+        if (info.isNote) {
+          CardManager.convertNoteToAction(info.card.id);
+        } else {
+          CardManager.convertToAction(info.card.id);
+        }
+        this.renderAll();
+        this.showFloatingText('已转为动作开关！✨');
+        this._closeDrawOverlay();
+        AudioEngine.cardFly();
+      }
+    });
     // Draw overlay — 删除按钮
     document.getElementById('drawOverlayDelete').addEventListener('click', () => {
-      const overlay = document.getElementById('drawOverlay');
-      const card = overlay._currentCard;
-      if (card) {
-        // 判断卡片类型
-        const inspCards = CardManager.getInspirationCards();
-        const noteCards = CardManager.getNotesCards();
-        const isNote = noteCards.some(function(c) { return c.id === card.id; });
-        if (isNote) {
-          CardManager.removeNote(card.id);
+      const info = _getDrawCardType();
+      if (info) {
+        if (info.isNote) {
+          CardManager.removeNote(info.card.id);
         } else {
-          CardManager.removeInspiration(card.id);
+          CardManager.removeInspiration(info.card.id);
         }
         this.renderAll();
         this.showFloatingText('已删除！🗑️');
@@ -3026,29 +3605,30 @@ const UIController = {
       AudioEngine.firework();
     });
 
-    // Shuffle buttons (stack mode)
+    // Shuffle buttons (works in both scatter and stack modes)
     document.getElementById('shuffleBtn').addEventListener('click', () => {
-      this._shuffleStackCards('scatterArea');
-      AudioEngine.shuffle();
-      VibrationEngine.shuffleVibe();
+      this._refreshArrangement('scatterArea');
     });
     document.getElementById('notesShuffleBtn').addEventListener('click', () => {
-      this._shuffleStackCards('notesScatterArea');
-      AudioEngine.shuffle();
-      VibrationEngine.shuffleVibe();
+      this._refreshArrangement('notesScatterArea');
     });
 
-    // Review mode buttons
-    document.getElementById('reviewInspBtn').addEventListener('click', () => { this._startReview('inspiration'); });
-    document.getElementById('reviewNotesBtn').addEventListener('click', () => { this._startReview('notes'); });
-    document.getElementById('reviewBingoBtn').addEventListener('click', () => { this._reviewBingo(); });
-    document.getElementById('reviewConvertBtn').addEventListener('click', () => { this._reviewConvert(); });
-    document.getElementById('reviewSkipBtn').addEventListener('click', () => { this._reviewSkip(); });
-    document.getElementById('reviewDeleteBtn').addEventListener('click', () => { this._reviewDelete(); });
-    document.getElementById('reviewCloseBtn').addEventListener('click', () => { this._closeReview(); AudioEngine.click(); });
-    document.getElementById('reviewOverlay').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) { this._closeReview(); AudioEngine.click(); }
+    // Group Add button
+    document.getElementById('groupAddBtn').addEventListener('click', () => {
+      const name = prompt('新建分组名称：');
+      if (!name || !name.trim()) return;
+      const icons = ['📌', '💼', '🏠', '🎨', '📚', '🎵', '🏃', '🍳', '✈️', '💡', '🌟', '🐱'];
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const gtype = this.currentView === 'notes' ? 'notes' : 'inspiration';
+      CardManager.addGroup(name.trim(), icon, CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)], gtype);
+      this._renderGroupSidebar();
+      this.showFloatingText('已创建分组：' + name.trim());
     });
+
+    // Select toolbar: inspiration view
+    this._bindSelectToolbar('selectAllBtn', 'selectMoveBtn', 'batchDeleteBtn', 'cancelSelectBtn', 'deleteAllBtn');
+    // Select toolbar: notes view
+    this._bindSelectToolbar('notesSelectAllBtn', 'notesSelectMoveBtn', 'notesBatchDeleteBtn', 'notesCancelSelectBtn', 'notesDeleteAllBtn');
 
     // Bind pull-down for inspiration view
     this._bindPullDown('inspirationView', 'pullBar', 'pullInput', 'pullSubmit', 'inspiration');
@@ -3067,12 +3647,6 @@ const UIController = {
         if (bar.classList.contains('visible')) document.getElementById('pullInput').focus();
       }
     });
-
-    // ---- Long press for voice input ----
-    this._bindLongPress('scatterArea', 'inspiration');
-    this._bindLongPress('notesScatterArea', 'notes');
-    this._bindLongPress('inspirationEmpty', 'inspiration');
-    this._bindLongPress('notesEmpty', 'notes');
 
     // Click on deselected area to deselect
     document.getElementById('scatterArea').addEventListener('click', (e) => {
@@ -3224,23 +3798,9 @@ const UIController = {
         if (delta > 25 && now - lastShake > 1500) {
           lastShake = now;
           if (this.currentView === 'inspiration') {
-            const inspCards = CardManager.getInspirationCards();
-            if (inspCards.length > STACK_THRESHOLD) {
-              this._shuffleStackCards('scatterArea');
-              AudioEngine.shuffle();
-              VibrationEngine.shuffleVibe();
-            } else {
-              this.drawInspiration();
-            }
+            this._refreshArrangement('scatterArea');
           } else if (this.currentView === 'notes') {
-            const noteCards = CardManager.getNotesCards();
-            if (noteCards.length > STACK_THRESHOLD) {
-              this._shuffleStackCards('notesScatterArea');
-              AudioEngine.shuffle();
-              VibrationEngine.shuffleVibe();
-            } else {
-              this.drawNotes();
-            }
+            this._refreshArrangement('notesScatterArea');
           }
         }
       });
@@ -3359,42 +3919,6 @@ const UIController = {
         pullInput.value = '';
         pullBar.classList.remove('visible');
         pullInput.blur();
-      }
-    });
-  },
-
-  // ---- Long press binding helper ----
-  _bindLongPress(areaId, viewType) {
-    const area = document.getElementById(areaId);
-    let longPressTimer = null;
-    let isLongPress = false;
-
-    area.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.scatter-card') || e.target.closest('.card-action-btn') || e.target.closest('.stack-card') || e.target.closest('.stack-container')) return;
-      longPressTimer = setTimeout(() => {
-        isLongPress = true;
-        document.getElementById('recordingOverlay').classList.add('active');
-        AudioEngine.click();
-        VibrationEngine.cardTapVibe();
-        this._startVoiceRecording();
-      }, 500);
-    });
-
-    area.addEventListener('pointerup', (e) => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this.addInspirationByVoice();
-        isLongPress = false;
-      }
-    });
-
-    area.addEventListener('pointerleave', () => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this._stopVoiceRecording();
-        isLongPress = false;
       }
     });
   },
