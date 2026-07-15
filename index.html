@@ -451,47 +451,43 @@ body {
 
 	/* ====== Stack Card Layout (for many cards) ====== */
 	.stack-container {
-	  display: flex; flex-direction: column;
-	  padding: 6px 10px; gap: 6px;
+	  position: relative; padding: 4px 6px;
 	}
-	.stack-card {
-	  display: flex; align-items: center; gap: 8px;
-	  padding: 10px 14px;
-	  border-radius: 14px; color: #fff; font-size: 14px; font-weight: 600;
-	  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-	  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
-	  position: relative; min-height: 48px;
+	.scatter-page-card {
+	  position: absolute; width: 130px; padding: 14px 12px;
+	  border-radius: 16px; color: #fff;
+	  font-size: 13px; font-weight: 600; line-height: 1.5;
+	  box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+	  cursor: pointer; transition: box-shadow 0.2s; z-index: 1;
+	  word-break: break-word; min-height: 60px;
+	  display: flex; flex-direction: column;
+	  justify-content: space-between;
 	  -webkit-tap-highlight-color: transparent;
 	}
-	.stack-card:active { transform: scale(0.97); box-shadow: 0 4px 18px rgba(0,0,0,0.15); }
-	.stack-card .stack-text {
-	  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-	  line-height: 1.3;
+	.scatter-page-card:active { box-shadow: 0 6px 22px rgba(0,0,0,0.18); z-index: 10; }
+	.scatter-page-card .page-card-text {
+	  flex: 1; overflow: hidden; display: -webkit-box;
+	  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+	  line-height: 1.4;
 	}
-	.stack-card .stack-del {
-	  width: 28px; height: 28px; border-radius: 50%; border: none;
-	  background: rgba(255,255,255,0.3); color: #fff; font-size: 14px;
-	  cursor: pointer; flex-shrink: 0; display: flex;
-	  align-items: center; justify-content: center;
-	  transition: background 0.15s;
+	.scatter-page-card .page-card-actions {
+	  display: flex; justify-content: flex-end; gap: 4px; margin-top: 8px;
 	}
-	.stack-card .stack-del:active { background: rgba(255,255,255,0.55); }
-	.stack-card .stack-convert {
-	  width: 28px; height: 28px; border-radius: 50%; border: none;
+	.scatter-page-card .page-card-btn {
+	  width: 26px; height: 26px; border-radius: 50%; border: none;
 	  background: rgba(255,255,255,0.3); color: #fff; font-size: 13px;
-	  cursor: pointer; flex-shrink: 0; display: flex;
-	  align-items: center; justify-content: center;
-	  transition: background 0.15s;
+	  cursor: pointer; display: flex; align-items: center; justify-content: center;
+	  transition: background 0.15s; backdrop-filter: blur(4px);
 	}
-	.stack-card .stack-convert:active { background: rgba(255,255,255,0.55); }
+	.scatter-page-card .page-card-btn:active { background: rgba(255,255,255,0.55); }
 
 	/* 加载更多哨兵 */
 	.stack-sentinel {
 	  text-align: center; padding: 12px; font-size: 12px;
-	  color: #b8a59a;
+	  color: #b8a59a; clear: both;
 	}
 
-	/* View with fixed bottom — scatter area becomes scrollable */
+	/* View with fixed bottom */
 	.view.has-stack {
 	  overflow-y: auto; -webkit-overflow-scrolling: touch;
 	}
@@ -527,6 +523,13 @@ body {
 	  transition: background 0.2s;
 	}
 	.draw-overlay-dismiss:active { background: rgba(255,255,255,0.3); }
+	.draw-overlay-delete {
+	  margin-top: 8px; padding: 10px 32px; border: 2px solid rgba(255,107,107,0.5);
+	  border-radius: 50px; background: rgba(255,107,107,0.2); color: #FF6B6B;
+	  font-size: 15px; font-weight: 600; cursor: pointer;
+	  transition: background 0.2s;
+	}
+	.draw-overlay-delete:active { background: rgba(255,107,107,0.4); }
 </style>
 </head>
 <body>
@@ -572,6 +575,13 @@ body {
                    display: flex; align-items: center; justify-content: center;">
             📳
           </button>
+          <button id="shuffleBtn" title="刷新排列"
+            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid #FF8C69; background: #fff; color: #FF8C69;
+                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
+                   display: none; align-items: center; justify-content: center;">
+            🔄
+          </button>
         </div>
       </div>
 
@@ -595,6 +605,13 @@ body {
         <div class="center-btn-area">
           <button class="big-draw-btn notes-btn" id="notesDrawBtn">
             🎲 抽一张小纸条
+          </button>
+          <button id="notesShuffleBtn" title="刷新排列"
+            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid #DA77F2; background: #fff; color: #DA77F2;
+                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
+                   display: none; align-items: center; justify-content: center;">
+            🔄
           </button>
         </div>
       </div>
@@ -770,6 +787,7 @@ body {
     <div class="draw-overlay-label">🎲 抽到了！</div>
     <div id="drawOverlayText"></div>
     <button class="draw-overlay-dismiss" id="drawOverlayDismiss">放回去</button>
+    <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
   </div>
 </div>
 
@@ -1345,6 +1363,10 @@ const UIController = {
     const viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
     const viewEl2 = document.getElementById(viewId2);
     if (viewEl2) viewEl2.classList.remove('has-stack');
+    // 隐藏刷新排列按钮
+    const shuffleId2 = areaId === 'notesScatterArea' ? 'notesShuffleBtn' : 'shuffleBtn';
+    const shuffleBtn2 = document.getElementById(shuffleId2);
+    if (shuffleBtn2) shuffleBtn2.style.display = 'none';
 
     // Remove existing cards, keep empty state
     area.querySelectorAll('.scatter-card').forEach(el => el.remove());
@@ -1455,10 +1477,14 @@ const UIController = {
     // 切换为可滚动模式，固定底部按钮
     if (view) view.classList.add('has-stack');
     area.style.minHeight = 'auto';
+    // 显示刷新排列按钮
+    const shuffleId = isNotes ? 'notesShuffleBtn' : 'shuffleBtn';
+    const shuffleBtn = document.getElementById(shuffleId);
+    if (shuffleBtn) shuffleBtn.style.display = 'flex';
 
     // 初始化分页状态
-    const PAGE_SIZE = 15;
-    const LOAD_MORE = 10;
+    const PAGE_SIZE = 12;
+    const LOAD_MORE = 8;
     this._stackState[areaId] = {
       allCards: cards,
       offset: PAGE_SIZE,
@@ -1481,7 +1507,7 @@ const UIController = {
     this._bindStackEvents(area, areaId, isNotes);
   },
 
-  // 追加一批卡片到容器
+  // 追加一批卡片到容器（散落布局，绝对定位 + 随机偏移）
   _appendStackBatch(area, areaId, batch) {
     if (batch.length === 0) return;
     const state = this._stackState[areaId];
@@ -1495,27 +1521,47 @@ const UIController = {
       area.appendChild(container);
     }
 
+    // 计算当前已加载总数，用于确定新卡片的基础行列位置
+    const existingCards = container.querySelectorAll('.scatter-page-card').length;
+    const areaW = area.getBoundingClientRect().width || 340;
+    const cols = Math.max(2, Math.floor(areaW / 145));
+    const rowHeight = 100;
+
     let html = '';
-    batch.forEach(function(card) {
+    batch.forEach(function(card, idx) {
+      const globalIdx = existingCards + idx;
+      const col = globalIdx % cols;
+      const row = Math.floor(globalIdx / cols);
+      const baseX = (areaW / (cols + 1)) * (col + 1) - 65;
+      const baseY = 10 + row * rowHeight;
+      const offsetX = (Math.random() - 0.5) * 24;
+      const offsetY = (Math.random() - 0.5) * 16;
+      const rotation = (Math.random() - 0.5) * 12;
+
       const text = self.escapeHtml(card.text);
-      html += '<div class="stack-card" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';">';
-      html += '<span class="stack-text">' + text + '</span>';
-      html += '<button class="stack-convert" data-action="stack-convert" title="转为动作">🤏</button>';
-      html += '<button class="stack-del" data-action="stack-dismiss" title="删除">✕</button>';
-      html += '</div>';
+      html += '<div class="scatter-page-card" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';left:' + (baseX + offsetX) + 'px;top:' + (baseY + offsetY) + 'px;transform:rotate(' + rotation + 'deg);">';
+      html += '<span class="page-card-text">' + text + '</span>';
+      html += '<div class="page-card-actions">';
+      html += '<button class="page-card-btn" data-action="stack-convert" title="转为动作">🤏</button>';
+      html += '<button class="page-card-btn" data-action="stack-dismiss" title="删除">✕</button>';
+      html += '</div></div>';
     });
     container.insertAdjacentHTML('beforeend', html);
+
+    // 更新容器高度
+    const totalCards = existingCards + batch.length;
+    const totalRows = Math.ceil(totalCards / cols);
+    container.style.minHeight = (totalRows * rowHeight + 40) + 'px';
   },
 
   // 添加加载哨兵
   _addStackSentinel(area, areaId) {
-    // 移除旧哨兵
     area.querySelectorAll('.stack-sentinel').forEach(el => el.remove());
 
     const sentinel = document.createElement('div');
     sentinel.className = 'stack-sentinel';
     sentinel.textContent = '下拉加载更多...';
-    area.querySelector('.stack-container').insertAdjacentElement('afterend', sentinel);
+    area.appendChild(sentinel);
 
     const self = this;
     const state = this._stackState[areaId];
@@ -1526,7 +1572,7 @@ const UIController = {
         if (!entry.isIntersecting) return;
         const s = self._stackState[areaId];
         if (!s || s.offset >= s.allCards.length) {
-          sentinel.textContent = '— 已显示全部 —';
+          sentinel.textContent = '— 已显示全部 ' + (s ? s.allCards.length : 0) + ' 条 —';
           observer.disconnect();
           return;
         }
@@ -1539,22 +1585,21 @@ const UIController = {
           observer.disconnect();
         }
       });
-    }, { root: area.closest('.view'), rootMargin: '100px' });
+    }, { root: area.closest('.view'), rootMargin: '120px' });
 
     observer.observe(sentinel);
     state.observer = observer;
   },
 
-  // 事件委托：堆叠卡片容器的统一事件监听（只绑定一次）
+  // 事件委托：散落卡片容器的统一事件监听
   _bindStackEvents(area, areaId, isNotes) {
-    // 避免重复绑定
     if (area.dataset.stackBound === '1') return;
     area.dataset.stackBound = '1';
 
     const self = this;
 
     area.addEventListener('click', function(e) {
-      const card = e.target.closest('.stack-card');
+      const card = e.target.closest('.scatter-page-card');
       if (!card) return;
 
       const id = parseInt(card.dataset.id);
@@ -1564,14 +1609,13 @@ const UIController = {
       if (actionType === 'stack-dismiss') {
         e.stopPropagation();
         card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-        card.style.transform = 'translateX(120%)';
+        card.style.transform = card.style.transform.replace(/rotate\([^)]+\)/, 'rotate(25deg)') + ' scale(0.3)';
         card.style.opacity = '0';
         AudioEngine.firework();
         VibrationEngine.dismissVibe();
         setTimeout(function() {
           if (isNotes) { CardManager.removeNote(id); }
           else { CardManager.removeInspiration(id); }
-          // 重置分页状态后重新渲染
           delete self._stackState[areaId];
           self.renderAll();
           self.showFloatingText(isNotes ? '小纸条飘走了~ 💌' : '又排除了一个，酷！🫧');
@@ -1585,7 +1629,6 @@ const UIController = {
         self.renderAll();
         if (actionCard) self.showFloatingText(isNotes ? '小纸条已转为动作开关！💌→🎬' : '已加入动作开关！✨');
       } else {
-        // 点击卡片 → 浮动显示内容
         const state = self._stackState[areaId];
         const allCards = state ? state.allCards : (isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards());
         const selected = allCards.find(function(c) { return c.id === id; });
@@ -1595,6 +1638,36 @@ const UIController = {
           self.showFloatingText(selected.text);
         }
       }
+    });
+  },
+
+  // 重新随机排列当前已加载卡片的位置（摇一摇 / 手动刷新）
+  _shuffleStackCards(areaId) {
+    const area = document.getElementById(areaId);
+    const cards = area.querySelectorAll('.scatter-page-card');
+    if (cards.length === 0) return;
+
+    const areaW = area.getBoundingClientRect().width || 340;
+    const cols = Math.max(2, Math.floor(areaW / 145));
+    const rowHeight = 100;
+
+    cards.forEach(function(card, i) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const baseX = (areaW / (cols + 1)) * (col + 1) - 65;
+      const baseY = 10 + row * rowHeight;
+      const offsetX = (Math.random() - 0.5) * 30;
+      const offsetY = (Math.random() - 0.5) * 20;
+      const rotation = (Math.random() - 0.5) * 14;
+
+      anime({
+        targets: card,
+        left: (baseX + offsetX) + 'px',
+        top: (baseY + offsetY) + 'px',
+        rotate: rotation + 'deg',
+        duration: 400 + Math.random() * 250,
+        easing: 'easeOutElastic(1, .5)',
+      });
     });
   },
 
@@ -2732,6 +2805,38 @@ const UIController = {
         AudioEngine.click();
       }
     });
+    // Draw overlay — 删除按钮
+    document.getElementById('drawOverlayDelete').addEventListener('click', () => {
+      const overlay = document.getElementById('drawOverlay');
+      const card = overlay._currentCard;
+      if (card) {
+        // 判断卡片类型
+        const inspCards = CardManager.getInspirationCards();
+        const noteCards = CardManager.getNotesCards();
+        const isNote = noteCards.some(function(c) { return c.id === card.id; });
+        if (isNote) {
+          CardManager.removeNote(card.id);
+        } else {
+          CardManager.removeInspiration(card.id);
+        }
+        this.renderAll();
+        this.showFloatingText('已删除！🗑️');
+      }
+      this._closeDrawOverlay();
+      AudioEngine.firework();
+    });
+
+    // Shuffle buttons (stack mode)
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      this._shuffleStackCards('scatterArea');
+      AudioEngine.shuffle();
+      VibrationEngine.shuffleVibe();
+    });
+    document.getElementById('notesShuffleBtn').addEventListener('click', () => {
+      this._shuffleStackCards('notesScatterArea');
+      AudioEngine.shuffle();
+      VibrationEngine.shuffleVibe();
+    });
 
     // Bind pull-down for inspiration view
     this._bindPullDown('inspirationView', 'pullBar', 'pullInput', 'pullSubmit', 'inspiration');
@@ -2907,9 +3012,23 @@ const UIController = {
         if (delta > 25 && now - lastShake > 1500) {
           lastShake = now;
           if (this.currentView === 'inspiration') {
-            this.drawInspiration();
+            const inspCards = CardManager.getInspirationCards();
+            if (inspCards.length > STACK_THRESHOLD) {
+              this._shuffleStackCards('scatterArea');
+              AudioEngine.shuffle();
+              VibrationEngine.shuffleVibe();
+            } else {
+              this.drawInspiration();
+            }
           } else if (this.currentView === 'notes') {
-            this.drawNotes();
+            const noteCards = CardManager.getNotesCards();
+            if (noteCards.length > STACK_THRESHOLD) {
+              this._shuffleStackCards('notesScatterArea');
+              AudioEngine.shuffle();
+              VibrationEngine.shuffleVibe();
+            } else {
+              this.drawNotes();
+            }
           }
         }
       });
