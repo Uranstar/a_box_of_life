@@ -57,13 +57,14 @@ body {
   flex: 1; position: relative; overflow: hidden;
 }
 .views-slider {
-  display: flex; width: 200%; height: 100%;
+  display: flex; width: 300%; height: 100%;
   transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
-.views-slider.in-action { transform: translateX(-50%); }
+.views-slider.in-notes { transform: translateX(-33.333%); }
+.views-slider.in-action { transform: translateX(-66.666%); }
 .view {
-  width: 50%; height: 100%;
+  width: 33.333%; height: 100%;
   position: relative; display: flex; flex-direction: column;
   overflow-y: auto; overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -100,7 +101,7 @@ body {
   pointer-events: none; opacity: 0.7;
 }
 
-/* ====== Card Scatter Area (Inspiration) ====== */
+/* ====== Card Scatter Area (Inspiration & Notes) ====== */
 .scatter-area {
   flex: 1; position: relative; min-height: 300px;
   padding: 8px;
@@ -200,21 +201,24 @@ body {
 .big-draw-btn.inspiration-btn {
   background: linear-gradient(135deg, #FF8C69, #FF6B6B);
 }
+.big-draw-btn.notes-btn {
+  background: linear-gradient(135deg, #DA77F2, #9B59B6);
+}
 .big-draw-btn.action-btn {
   background: linear-gradient(135deg, #69DB7C, #38B2AC);
 }
 
 /* ====== Bottom Nav ====== */
 .bottom-nav {
-  display: flex; justify-content: center; gap: 40px;
+  display: flex; justify-content: center; gap: 28px;
   padding: 12px 0 calc(20px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(0deg, rgba(255,248,240,0.98) 60%, rgba(255,248,240,0) 100%);
   z-index: 10; position: relative;
 }
 .nav-icon {
-  width: 56px; height: 56px; border-radius: 50%;
+  width: 52px; height: 52px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px; cursor: pointer; transition: all 0.3s;
+  font-size: 24px; cursor: pointer; transition: all 0.3s;
   background: #f0e8e0; color: #b8a59a;
   position: relative;
 }
@@ -227,6 +231,13 @@ body {
   content: ''; position: absolute; inset: -4px; border-radius: 50%;
   border: 3px solid rgba(255,140,105,0.3);
   animation: breathe 2s ease-in-out infinite;
+}
+.nav-icon.notes-active.active {
+  color: #DA77F2;
+  box-shadow: 0 4px 16px rgba(218,119,242,0.25);
+}
+.nav-icon.notes-active.active::after {
+  border-color: rgba(218,119,242,0.3);
 }
 .nav-icon.action-active.active {
   color: #38B2AC;
@@ -410,6 +421,33 @@ body {
 .action-card:nth-child(2n) { animation-delay: 0.5s; }
 .action-card:nth-child(3n) { animation-delay: 1.2s; }
 .action-card:nth-child(5n) { animation-delay: 2.1s; }
+
+	/* ====== Delimiter Buttons ====== */
+	.delimiter-btn {
+	  padding: 4px 10px; border-radius: 12px; border: 1.5px solid #e8ddd3;
+	  background: #fff; font-size: 12px; color: #b8a59a; cursor: pointer;
+	  transition: all 0.15s; font-family: inherit;
+	}
+	.delimiter-btn.active {
+	  background: #FF8C69; color: #fff; border-color: #FF8C69;
+	}
+	.delimiter-btn.notes-active {
+	  background: #DA77F2; color: #fff; border-color: #DA77F2;
+	}
+	.batch-clipboard-btn {
+	  width: 100%; margin-top: 8px; padding: 10px; border: 2px dashed #e8ddd3;
+	  border-radius: 14px; background: #FFF8F0; color: #b8a59a;
+	  font-size: 13px; cursor: pointer; font-family: inherit;
+	  transition: all 0.15s;
+	}
+	.batch-clipboard-btn:active {
+	  background: #f0e8e0; border-color: #FF8C69; color: #FF8C69;
+	}
+	.batch-preview-text {
+	  font-size: 12px; color: #FF8C69; margin-bottom: 6px; min-height: 18px;
+	  transition: all 0.2s;
+	}
+	.batch-preview-text.notes-preview { color: #DA77F2; }
 </style>
 </head>
 <body>
@@ -458,6 +496,30 @@ body {
         </div>
       </div>
 
+      <!-- Notes View (情绪小纸条) -->
+      <div class="view" id="notesView">
+        <div class="pull-hint">↓ 下拉添加小纸条 · <button id="notesBatchOpenBtn" style="background:none;border:none;color:#DA77F2;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;pointer-events:auto;">批量添加</button></div>
+        <div class="pull-bar" id="notesPullBar">
+          <input type="text" id="notesPullInput" placeholder="写一张情绪小纸条..." maxlength="80">
+          <button id="notesPullSubmit">✓</button>
+        </div>
+        <div class="scatter-area" id="notesScatterArea">
+          <div class="empty-state" id="notesEmpty">
+            <div class="empty-emoji">💌</div>
+            <div class="empty-text">
+              还没有小纸条<br>
+              长按这里录音，或下拉输入<br>
+              把此刻的情绪写下来吧
+            </div>
+          </div>
+        </div>
+        <div class="center-btn-area">
+          <button class="big-draw-btn notes-btn" id="notesDrawBtn">
+            🎲 抽一张小纸条
+          </button>
+        </div>
+      </div>
+
       <!-- Action Switch View -->
       <div class="view" id="actionView">
         <div class="center-btn-area">
@@ -495,6 +557,12 @@ body {
         🫙
       </div>
       <div class="nav-label">灵感罐头</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon notes-active" id="navNotes">
+        💌
+      </div>
+      <div class="nav-label">情绪小纸条</div>
     </div>
     <div class="nav-item">
       <div class="nav-icon action-active" id="navAction">
@@ -563,19 +631,56 @@ body {
   </div>
 </div>
 
-<!-- Batch Input Modal -->
+<!-- Batch Input Modal (Inspiration) -->
 <div class="batch-modal" id="batchModal">
   <div class="batch-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h3 style="font-size:18px;color:#4A3728;">📋 批量添加灵感</h3>
       <button id="batchCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;color:#b8a59a;">✕</button>
     </div>
-    <p style="font-size:12px;color:#b8a59a;margin-bottom:10px;">每行一个灵感，回车分隔</p>
+    <p style="font-size:12px;color:#b8a59a;margin-bottom:6px;">每行一个灵感，支持多种分隔方式</p>
+    <!-- 分隔符选择 -->
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;flex-wrap:wrap;" id="batchDelimiterGroup">
+      <span style="font-size:12px;color:#b8a59a;">分隔：</span>
+      <button class="delimiter-btn active" data-d="\n">↲ 换行</button>
+      <button class="delimiter-btn" data-d=" ">␣ 空格</button>
+      <button class="delimiter-btn" data-d=",">, 逗号</button>
+      <button class="delimiter-btn" data-d="custom">✎ 自定义</button>
+    </div>
+    <div class="batch-preview-text" id="batchPreview"></div>
     <textarea id="batchTextarea" rows="8" placeholder="试试用水彩画星空&#10;折一只会跳的纸青蛙&#10;在窗台上种一盆薄荷"
       style="width:100%;border-radius:14px;border:2px solid #f0e8e0;padding:12px;font-size:15px;resize:none;outline:none;font-family:inherit;color:#4A3728;background:#FFF8F0;"></textarea>
+    <button id="batchClipboardBtn" class="batch-clipboard-btn">📋 从剪贴板读取</button>
     <button id="batchSubmitBtn" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:14px;
       background:linear-gradient(135deg,#FF8C69,#FF6B6B);color:#fff;font-size:16px;font-weight:700;cursor:pointer;">
       ✨ 全部加入罐头
+    </button>
+  </div>
+</div>
+
+<!-- Batch Input Modal (Notes) -->
+<div class="batch-modal" id="notesBatchModal">
+  <div class="batch-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:18px;color:#4A3728;">💌 批量添加小纸条</h3>
+      <button id="notesBatchCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;color:#b8a59a;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#b8a59a;margin-bottom:6px;">每行一张小纸条，支持多种分隔方式</p>
+    <!-- 分隔符选择 -->
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;flex-wrap:wrap;" id="notesBatchDelimiterGroup">
+      <span style="font-size:12px;color:#b8a59a;">分隔：</span>
+      <button class="delimiter-btn active" data-d="\n">↲ 换行</button>
+      <button class="delimiter-btn" data-d=" ">␣ 空格</button>
+      <button class="delimiter-btn" data-d=",">, 逗号</button>
+      <button class="delimiter-btn" data-d="custom">✎ 自定义</button>
+    </div>
+    <div class="batch-preview-text notes-preview" id="notesBatchPreview"></div>
+    <textarea id="notesBatchTextarea" rows="8" placeholder="今天阳光很好，心情也跟着亮了起来&#10;有点焦虑，但没关系，慢慢来&#10;感谢朋友今天的一句鼓励"
+      style="width:100%;border-radius:14px;border:2px solid #f0e8e0;padding:12px;font-size:15px;resize:none;outline:none;font-family:inherit;color:#4A3728;background:#FFF8F0;"></textarea>
+    <button id="notesBatchClipboardBtn" class="batch-clipboard-btn">📋 从剪贴板读取</button>
+    <button id="notesBatchSubmitBtn" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:14px;
+      background:linear-gradient(135deg,#DA77F2,#9B59B6);color:#fff;font-size:16px;font-weight:700;cursor:pointer;">
+      ✨ 全部加入小纸条
     </button>
   </div>
 </div>
@@ -679,12 +784,9 @@ const AudioEngine = (() => {
       } catch(e) {}
     },
     click: () => {
-      // Gentle water drop sound
       try {
         const c = getCtx();
         const now = c.currentTime;
-
-        // Main drop: sine wave dropping from high to low
         const osc = c.createOscillator();
         const gain = c.createGain();
         osc.type = 'sine';
@@ -694,8 +796,6 @@ const AudioEngine = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
         osc.connect(gain); gain.connect(c.destination);
         osc.start(now); osc.stop(now + 0.15);
-
-        // Tiny ripple: second harmonic
         const osc2 = c.createOscillator();
         const gain2 = c.createGain();
         osc2.type = 'sine';
@@ -738,7 +838,6 @@ const VibrationEngine = {
     if (navigator.vibrate) navigator.vibrate(pattern);
   },
   shuffleVibe() {
-    // Increasing intensity: weak → strong
     this.vibrate([30, 50, 50, 60, 80, 70, 150]);
   },
   confirmVibe() {
@@ -761,6 +860,12 @@ const CARD_COLORS = [
   '#FF8787', '#74C0FC', '#FF922B', '#20C997',
 ];
 
+const NOTES_COLORS = [
+  '#DA77F2', '#BE4BDB', '#CC5DE8', '#E599F7',
+  '#B197FC', '#9775FA', '#845EF7', '#9B59B6',
+  '#D0BFFF', '#C084FC', '#A78BFA', '#8B5CF6',
+];
+
 const DEFAULT_INSPIRATIONS = [
   '试试用水彩画星空',
   '用橡皮章刻一个小图案',
@@ -779,8 +884,22 @@ const DEFAULT_INSPIRATIONS = [
   '跟着音乐乱跳三分钟',
 ];
 
+const DEFAULT_NOTES = [
+  '今天阳光很好，心情也跟着亮了起来 ☀️',
+  '有点焦虑，但没关系，慢慢来 🌿',
+  '感谢朋友今天的一句鼓励 💛',
+  '喝完一杯热茶，整个人都暖了 🍵',
+  '今天的晚霞特别美 🌇',
+  '突然很想念小时候的那个院子 🏡',
+  '完成了一件拖了很久的事，轻松多了 ✨',
+  '听到一首好听的歌，单曲循环中 🎵',
+  '对自己说：你已经做得很好了 🤗',
+  '今天遇到一只超可爱的猫 🐱',
+];
+
 const CardManager = {
   _inspirationCards: [],
+  _notesCards: [],
   _actionCards: [],
   _deletedItems: [],
   _nextId: 1,
@@ -790,6 +909,7 @@ const CardManager = {
       const saved = JSON.parse(localStorage.getItem('twobox_data'));
       if (saved) {
         this._inspirationCards = saved.inspirationCards || [];
+        this._notesCards = saved.notesCards || [];
         this._actionCards = saved.actionCards || [];
         this._deletedItems = saved.deletedItems || [];
         this._nextId = saved.nextId || 1;
@@ -801,6 +921,7 @@ const CardManager = {
     try {
       localStorage.setItem('twobox_data', JSON.stringify({
         inspirationCards: this._inspirationCards,
+        notesCards: this._notesCards,
         actionCards: this._actionCards,
         deletedItems: this._deletedItems.slice(-30),
         nextId: this._nextId,
@@ -808,6 +929,7 @@ const CardManager = {
     } catch(e) {}
   },
 
+  // ---- Inspiration Cards ----
   addInspiration(text, color) {
     const card = {
       id: this._nextId++,
@@ -831,6 +953,31 @@ const CardManager = {
 
   getInspirationCards() { return [...this._inspirationCards]; },
 
+  // ---- Notes Cards (情绪小纸条) ----
+  addNote(text, color) {
+    const card = {
+      id: this._nextId++,
+      text: text || this._randomNote(),
+      color: color || NOTES_COLORS[Math.floor(Math.random() * NOTES_COLORS.length)],
+      createdAt: Date.now(),
+    };
+    this._notesCards.unshift(card);
+    this.save();
+    return card;
+  },
+
+  removeNote(id) {
+    const card = this._notesCards.find(c => c.id === id);
+    if (card) {
+      this._deletedItems.push({ ...card, type: 'note', deletedAt: Date.now() });
+    }
+    this._notesCards = this._notesCards.filter(c => c.id !== id);
+    this.save();
+  },
+
+  getNotesCards() { return [...this._notesCards]; },
+
+  // ---- Action Cards ----
   addAction(text, instruction, imageDataUrl) {
     const card = {
       id: this._nextId++,
@@ -856,15 +1003,18 @@ const CardManager = {
   getDeletedItems() { return [...this._deletedItems].reverse(); },
 
   restoreDeleted(index) {
-    // index in the reversed list (most recent first)
     const reversed = [...this._deletedItems].reverse();
     if (index < 0 || index >= reversed.length) return null;
     const item = reversed[index];
-    // Remove from deleted list
     this._deletedItems = this._deletedItems.filter(d => d.id !== item.id || d.deletedAt !== item.deletedAt);
     if (item.type === 'inspiration') {
       const card = { id: this._nextId++, text: item.text, color: item.color, createdAt: Date.now() };
       this._inspirationCards.unshift(card);
+      this.save();
+      return card;
+    } else if (item.type === 'note') {
+      const card = { id: this._nextId++, text: item.text, color: item.color, createdAt: Date.now() };
+      this._notesCards.unshift(card);
       this.save();
       return card;
     } else {
@@ -899,6 +1049,23 @@ const CardManager = {
     return action;
   },
 
+  convertNoteToAction(noteId) {
+    const idx = this._notesCards.findIndex(c => c.id === noteId);
+    if (idx === -1) return null;
+    const note = this._notesCards[idx];
+    this._notesCards.splice(idx, 1);
+    const action = {
+      id: this._nextId++,
+      text: note.text,
+      instruction: note.text,
+      imageDataUrl: null,
+      createdAt: Date.now(),
+    };
+    this._actionCards.unshift(action);
+    this.save();
+    return action;
+  },
+
   convertActionToInspiration(actionId) {
     const idx = this._actionCards.findIndex(c => c.id === actionId);
     if (idx === -1) return null;
@@ -917,6 +1084,10 @@ const CardManager = {
 
   _randomInspiration() {
     return DEFAULT_INSPIRATIONS[Math.floor(Math.random() * DEFAULT_INSPIRATIONS.length)];
+  },
+
+  _randomNote() {
+    return DEFAULT_NOTES[Math.floor(Math.random() * DEFAULT_NOTES.length)];
   }
 };
 
@@ -962,7 +1133,7 @@ const ConfettiEngine = (() => {
     particles = particles.filter(p => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.15; // gravity
+      p.vy += 0.15;
       p.life -= p.decay;
       p.rotation += p.rotSpeed;
       if (p.life <= 0) return false;
@@ -1000,6 +1171,9 @@ const ConfettiEngine = (() => {
 const UIController = {
   currentView: 'inspiration',
   selectedCardId: null,
+  selectedCardView: null, // 'inspiration' or 'notes'
+  _batchDelimiter: '\n',
+  _notesBatchDelimiter: '\n',
 
   init() {
     CardManager.init();
@@ -1017,28 +1191,41 @@ const UIController = {
 
     const slider = document.getElementById('viewsSlider');
     const navInsp = document.getElementById('navInspiration');
+    const navNotes = document.getElementById('navNotes');
     const navAct = document.getElementById('navAction');
     const drawBtn = document.getElementById('drawBtn');
+    const notesDrawBtn = document.getElementById('notesDrawBtn');
     const actionDrawBtn = document.getElementById('actionDrawBtn');
     const addBtn = document.getElementById('addActionBtn');
 
-    if (view === 'action') {
-      slider.classList.add('in-action');
-      navInsp.classList.remove('active');
-      navAct.classList.add('active');
-      drawBtn.textContent = '✨ 重温快乐';
-      drawBtn.className = 'big-draw-btn action-btn';
-      actionDrawBtn.style.display = 'block';
-      addBtn.style.display = 'flex';
-    } else {
-      slider.classList.remove('in-action');
+    // Reset all nav
+    navInsp.classList.remove('active');
+    navNotes.classList.remove('active');
+    navAct.classList.remove('active');
+    slider.classList.remove('in-notes', 'in-action');
+
+    // Hide all draw buttons
+    drawBtn.style.display = 'none';
+    notesDrawBtn.style.display = 'none';
+    actionDrawBtn.style.display = 'none';
+    addBtn.style.display = 'none';
+
+    if (view === 'inspiration') {
       navInsp.classList.add('active');
-      navAct.classList.remove('active');
+      drawBtn.style.display = 'inline-block';
       drawBtn.textContent = '🎲 抽一个灵感';
       drawBtn.className = 'big-draw-btn inspiration-btn';
-      actionDrawBtn.style.display = 'none';
-      addBtn.style.display = 'none';
+    } else if (view === 'notes') {
+      slider.classList.add('in-notes');
+      navNotes.classList.add('active');
+      notesDrawBtn.style.display = 'inline-block';
+    } else if (view === 'action') {
+      slider.classList.add('in-action');
+      navAct.classList.add('active');
+      actionDrawBtn.style.display = 'block';
+      addBtn.style.display = 'flex';
     }
+
     this.deselectCard();
     this.renderCards();
   },
@@ -1051,17 +1238,18 @@ const UIController = {
 
   renderCards() {
     this.renderInspirationCards();
+    this.renderNotesCards();
     this.renderActionCards();
   },
 
-  renderInspirationCards() {
-    const area = document.getElementById('scatterArea');
-    const cards = CardManager.getInspirationCards();
+  renderScatterCards(areaId, cards, selectedCardId, emptyId) {
+    const area = document.getElementById(areaId);
+    const cardsList = cards;
 
     // Remove existing cards, keep empty state
     area.querySelectorAll('.scatter-card').forEach(el => el.remove());
 
-    if (cards.length === 0) {
+    if (cardsList.length === 0) {
       area.style.minHeight = '300px';
       return;
     }
@@ -1069,14 +1257,17 @@ const UIController = {
     const areaRect = area.getBoundingClientRect();
     const areaW = areaRect.width || 350;
     const cols = Math.max(2, Math.floor(areaW / 140));
-    const rows = Math.ceil(cards.length / cols);
+    const rows = Math.ceil(cardsList.length / cols);
     area.style.minHeight = Math.max(300, rows * 130 + 40) + 'px';
 
-    cards.forEach((card, i) => {
+    const self = this;
+
+    cardsList.forEach((card, i) => {
       const el = document.createElement('div');
       el.className = 'scatter-card';
-      if (this.selectedCardId === card.id) el.classList.add('selected');
+      if (selectedCardId === card.id) el.classList.add('selected');
       el.dataset.id = card.id;
+      el.dataset.view = areaId === 'scatterArea' ? 'inspiration' : 'notes';
       el.style.backgroundColor = card.color;
       el.style.width = '135px';
       el.style.padding = '14px 12px';
@@ -1095,6 +1286,8 @@ const UIController = {
       el.style.transform = `rotate(${rotation}deg)`;
       el.style.zIndex = i;
 
+      const isNotes = areaId === 'notesScatterArea';
+
       el.innerHTML = `
         <span>${this.escapeHtml(card.text)}</span>
         <div class="card-actions">
@@ -1106,24 +1299,40 @@ const UIController = {
       // Click to select
       el.addEventListener('click', (e) => {
         if (e.target.closest('.card-action-btn')) return;
-        this.selectCard(card.id, el);
+        this.selectCard(card.id, el, isNotes ? 'notes' : 'inspiration');
       });
 
       // Action buttons
       el.querySelector('[data-action="convert"]').addEventListener('click', (e) => {
         e.stopPropagation();
-        this.convertCard(card.id, el);
+        if (isNotes) {
+          this.convertNoteCard(card.id, el);
+        } else {
+          this.convertCard(card.id, el);
+        }
       });
       el.querySelector('[data-action="dismiss"]').addEventListener('click', (e) => {
         e.stopPropagation();
-        this.dismissCard(card.id, el);
+        if (isNotes) {
+          this.dismissNoteCard(card.id, el);
+        } else {
+          this.dismissCard(card.id, el);
+        }
       });
 
       // Swipe up to dismiss
-      this.bindSwipe(el, card.id);
+      this.bindSwipe(el, card.id, isNotes ? 'notes' : 'inspiration');
 
       area.appendChild(el);
     });
+  },
+
+  renderInspirationCards() {
+    this.renderScatterCards('scatterArea', CardManager.getInspirationCards(), this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
+  },
+
+  renderNotesCards() {
+    this.renderScatterCards('notesScatterArea', CardManager.getNotesCards(), this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
   },
 
   renderActionCards() {
@@ -1193,23 +1402,27 @@ const UIController = {
 
   updateEmptyStates() {
     const inspEmpty = document.getElementById('inspirationEmpty');
+    const notesEmpty = document.getElementById('notesEmpty');
     const actionEmpty = document.getElementById('actionEmpty');
     inspEmpty.style.display = CardManager.getInspirationCards().length === 0 ? 'flex' : 'none';
+    notesEmpty.style.display = CardManager.getNotesCards().length === 0 ? 'flex' : 'none';
     actionEmpty.style.display = CardManager.getActionCards().length === 0 ? 'flex' : 'none';
   },
 
   // ---- Card Interactions ----
-  selectCard(id, el) {
+  selectCard(id, el, view) {
     VibrationEngine.cardTapVibe();
     AudioEngine.pop();
 
     // Deselect previous
     document.querySelectorAll('.scatter-card.selected').forEach(c => c.classList.remove('selected'));
     this.selectedCardId = id;
+    this.selectedCardView = view;
     el.classList.add('selected');
 
     // Animate to center
-    const area = document.getElementById('scatterArea');
+    const areaId = view === 'notes' ? 'notesScatterArea' : 'scatterArea';
+    const area = document.getElementById(areaId);
     const areaRect = area.getBoundingClientRect();
     const cardRect = el.getBoundingClientRect();
     const centerX = areaRect.width / 2 - cardRect.width / 2;
@@ -1228,8 +1441,9 @@ const UIController = {
       }
     });
 
-    // Dim other cards
-    document.querySelectorAll('.scatter-card:not(.selected)').forEach(c => {
+    // Dim other cards in the same area
+    const areaEl = document.getElementById(areaId);
+    areaEl.querySelectorAll('.scatter-card:not(.selected)').forEach(c => {
       c.style.filter = 'brightness(0.7) blur(1px)';
       c.style.pointerEvents = 'none';
     });
@@ -1237,12 +1451,14 @@ const UIController = {
 
   deselectCard() {
     this.selectedCardId = null;
+    this.selectedCardView = null;
     document.querySelectorAll('.scatter-card').forEach(c => {
       c.classList.remove('selected');
       c.style.filter = '';
       c.style.pointerEvents = '';
     });
     this.renderInspirationCards();
+    this.renderNotesCards();
   },
 
   dismissCard(id, el) {
@@ -1252,7 +1468,6 @@ const UIController = {
     const rect = el.getBoundingClientRect();
     ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 50);
 
-    // Animate fly away
     anime({
       targets: el,
       translateY: -200,
@@ -1270,11 +1485,34 @@ const UIController = {
     });
   },
 
+  dismissNoteCard(id, el) {
+    AudioEngine.firework();
+    VibrationEngine.dismissVibe();
+
+    const rect = el.getBoundingClientRect();
+    ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 50);
+
+    anime({
+      targets: el,
+      translateY: -200,
+      rotate: '25deg',
+      opacity: 0,
+      scale: 0.5,
+      duration: 500,
+      easing: 'easeInBack',
+      complete: () => {
+        CardManager.removeNote(id);
+        this.deselectCard();
+        this.renderAll();
+        this.showFloatingText('小纸条飘走了~ 💌');
+      }
+    });
+  },
+
   convertCard(id, el) {
     AudioEngine.cardFly();
     VibrationEngine.confirmVibe();
 
-    // Get target position (action nav icon)
     const navIcon = document.getElementById('navAction');
     const navRect = navIcon.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
@@ -1296,7 +1534,6 @@ const UIController = {
         this.deselectCard();
         this.renderAll();
         if (actionCard) {
-          // Pulse the action nav
           anime({
             targets: '#navAction',
             scale: [1, 1.3, 1],
@@ -1304,6 +1541,43 @@ const UIController = {
             easing: 'easeOutElastic(1, .5)',
           });
           this.showFloatingText('已加入动作开关！✨');
+        }
+      }
+    });
+  },
+
+  convertNoteCard(id, el) {
+    AudioEngine.cardFly();
+    VibrationEngine.confirmVibe();
+
+    const navIcon = document.getElementById('navAction');
+    const navRect = navIcon.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    const targetX = navRect.left + navRect.width / 2 - elRect.width / 2;
+    const targetY = navRect.top + navRect.height / 2 - elRect.height / 2;
+
+    anime({
+      targets: el,
+      left: targetX + 'px',
+      top: targetY + 'px',
+      scale: 0.3,
+      opacity: 0,
+      rotate: '0deg',
+      duration: 500,
+      easing: 'easeInQuad',
+      complete: () => {
+        const actionCard = CardManager.convertNoteToAction(id);
+        this.deselectCard();
+        this.renderAll();
+        if (actionCard) {
+          anime({
+            targets: '#navAction',
+            scale: [1, 1.3, 1],
+            duration: 500,
+            easing: 'easeOutElastic(1, .5)',
+          });
+          this.showFloatingText('小纸条已转为动作开关！💌→🎬');
         }
       }
     });
@@ -1348,7 +1622,6 @@ const UIController = {
         const insp = CardManager.convertActionToInspiration(id);
         this.renderAll();
         if (insp) {
-          // Pulse the inspiration nav
           anime({
             targets: '#navInspiration',
             scale: [1, 1.3, 1],
@@ -1395,14 +1668,12 @@ const UIController = {
     AudioEngine.shuffle();
     VibrationEngine.shuffleVibe();
 
-    // Animate all cards shuffling
-    const cardEls = document.querySelectorAll('.scatter-card');
+    const cardEls = document.querySelectorAll('#scatterArea .scatter-card');
     const area = document.getElementById('scatterArea');
     const areaRect = area.getBoundingClientRect();
     const areaW = areaRect.width || 350;
     const areaH = areaRect.height || 400;
 
-    // First, shuffle all cards to random positions
     cardEls.forEach((el, i) => {
       const randX = 10 + Math.random() * (areaW - 150);
       const randY = 10 + Math.random() * (areaH - 120);
@@ -1420,13 +1691,57 @@ const UIController = {
       });
     });
 
-    // After shuffle, select a random card
     setTimeout(() => {
       const randomIdx = Math.floor(Math.random() * cards.length);
       const randomCard = cards[randomIdx];
-      const targetEl = document.querySelector(`.scatter-card[data-id="${randomCard.id}"]`);
+      const targetEl = document.querySelector(`#scatterArea .scatter-card[data-id="${randomCard.id}"]`);
       if (targetEl) {
-        this.selectCard(randomCard.id, targetEl);
+        this.selectCard(randomCard.id, targetEl, 'inspiration');
+        AudioEngine.ding();
+      }
+    }, 800);
+  },
+
+  drawNotes() {
+    const cards = CardManager.getNotesCards();
+    if (cards.length === 0) {
+      this.showFloatingText('还没有小纸条，先写一张吧~ 💌');
+      AudioEngine.click();
+      return;
+    }
+
+    AudioEngine.shuffle();
+    VibrationEngine.shuffleVibe();
+
+    const cardEls = document.querySelectorAll('#notesScatterArea .scatter-card');
+    const area = document.getElementById('notesScatterArea');
+    const areaRect = area.getBoundingClientRect();
+    const areaW = areaRect.width || 350;
+    const areaH = areaRect.height || 400;
+
+    cardEls.forEach((el, i) => {
+      const randX = 10 + Math.random() * (areaW - 150);
+      const randY = 10 + Math.random() * (areaH - 120);
+      const randRot = (Math.random() - 0.5) * 45;
+
+      anime({
+        targets: el,
+        left: randX + 'px',
+        top: randY + 'px',
+        rotate: randRot + 'deg',
+        scale: 1,
+        duration: 400 + Math.random() * 300,
+        easing: 'easeInOutQuad',
+        delay: i * 30,
+      });
+    });
+
+    setTimeout(() => {
+      const randomIdx = Math.floor(Math.random() * cards.length);
+      const randomCard = cards[randomIdx];
+      const targetEl = document.querySelector(`#notesScatterArea .scatter-card[data-id="${randomCard.id}"]`);
+      if (targetEl) {
+        this.selectCard(randomCard.id, targetEl, 'notes');
         AudioEngine.ding();
       }
     }, 800);
@@ -1443,7 +1758,6 @@ const UIController = {
     AudioEngine.shuffle();
     VibrationEngine.shuffleVibe();
 
-    // Brief shuffle animation on grid cards
     const actionCards = document.querySelectorAll('.action-card');
     actionCards.forEach((el, i) => {
       anime({
@@ -1455,7 +1769,6 @@ const UIController = {
       });
     });
 
-    // Pick random
     setTimeout(() => {
       const randomCard = cards[Math.floor(Math.random() * cards.length)];
       this.openActionOverlay(randomCard);
@@ -1471,9 +1784,31 @@ const UIController = {
     AudioEngine.ding();
     VibrationEngine.cardTapVibe();
 
-    // Animate the new card flying in
     setTimeout(() => {
-      const el = document.querySelector(`.scatter-card[data-id="${card.id}"]`);
+      const el = document.querySelector(`#scatterArea .scatter-card[data-id="${card.id}"]`);
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.3) rotate(0deg)';
+        anime({
+          targets: el,
+          opacity: 1,
+          scale: 1,
+          duration: 500,
+          easing: 'easeOutElastic(1, .6)',
+        });
+      }
+    }, 50);
+  },
+
+  addNoteByText(text) {
+    if (!text.trim()) return;
+    const card = CardManager.addNote(text.trim());
+    this.renderAll();
+    AudioEngine.ding();
+    VibrationEngine.cardTapVibe();
+
+    setTimeout(() => {
+      const el = document.querySelector(`#notesScatterArea .scatter-card[data-id="${card.id}"]`);
       if (el) {
         el.style.opacity = '0';
         el.style.transform = 'scale(0.3) rotate(0deg)';
@@ -1489,7 +1824,6 @@ const UIController = {
   },
 
   addInspirationByVoice() {
-    // Try Web Speech API first
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -1500,7 +1834,11 @@ const UIController = {
       recognition.onresult = (event) => {
         const text = event.results[0][0].transcript;
         if (text) {
-          this.addInspirationByText(text);
+          if (this.currentView === 'notes') {
+            this.addNoteByText(text);
+          } else {
+            this.addInspirationByText(text);
+          }
           this.showFloatingText('听到啦！✨');
         }
         this._stopVoiceRecording();
@@ -1532,7 +1870,6 @@ const UIController = {
       };
       this._voiceRecorder.start();
     } catch(e) {
-      // Mic not available, will fall back to prompt on release
       this._voiceStream = null;
       this._voiceRecorder = null;
     }
@@ -1550,10 +1887,15 @@ const UIController = {
   },
 
   _showVoiceFallbackInput() {
-    const text = prompt('💡 说说你的灵感吧（语音识别需要 HTTPS 环境）：', '');
+    const label = this.currentView === 'notes' ? '💌 说说你的情绪吧（语音识别需要 HTTPS 环境）：' : '💡 说说你的灵感吧（语音识别需要 HTTPS 环境）：';
+    const text = prompt(label, '');
     if (text && text.trim()) {
-      this.addInspirationByText(text.trim());
-      this.showFloatingText('捕获了一个灵感！✨');
+      if (this.currentView === 'notes') {
+        this.addNoteByText(text.trim());
+      } else {
+        this.addInspirationByText(text.trim());
+      }
+      this.showFloatingText('捕获了一个念头！✨');
     } else {
       this.showFloatingText('没关系，想起了再说~ 🫙');
     }
@@ -1583,15 +1925,164 @@ const UIController = {
     }, 50);
   },
 
-  // ---- Batch Modal ----
+  // ---- Batch Shared Utilities ----
+
+  // 按分隔符切分文本，过滤空行
+  _splitByDelimiter(text, delimiter) {
+    let normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    if (delimiter === '\n') {
+      return normalized.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    }
+    if (delimiter === ',') {
+      return normalized.split(/[，,]/).map(s => s.trim()).filter(s => s.length > 0);
+    }
+    return normalized.split(delimiter).map(s => s.trim()).filter(s => s.length > 0);
+  },
+
+  // 自动检测最佳分隔符
+  _detectDelimiter(text) {
+    if (text.includes('\n')) return '\n';
+    const spaceCount = (text.match(/ /g) || []).length;
+    if (spaceCount >= 2 && !text.includes('\n')) return ' ';
+    if (/[，,]/.test(text)) return ',';
+    return '\n';
+  },
+
+  // 更新预览计数
+  _updateBatchPreview(modalPrefix) {
+    const textareaId = modalPrefix === 'notes' ? 'notesBatchTextarea' : 'batchTextarea';
+    const previewId = modalPrefix === 'notes' ? 'notesBatchPreview' : 'batchPreview';
+    const textarea = document.getElementById(textareaId);
+    const preview = document.getElementById(previewId);
+    if (!textarea || !preview) return;
+    const delimiter = modalPrefix === 'notes' ? this._notesBatchDelimiter : this._batchDelimiter;
+    const items = this._splitByDelimiter(textarea.value, delimiter);
+    if (items.length > 0) {
+      preview.textContent = '识别到 ' + items.length + ' 条内容';
+    } else {
+      preview.textContent = '';
+    }
+  },
+
+  // 设置分隔符并更新 UI
+  _setBatchDelimiter(delimiter, modalPrefix) {
+    if (delimiter === 'custom') {
+      const custom = prompt('请输入自定义分隔符（如 |、;、# 等）：', '');
+      if (!custom) return;
+      delimiter = custom;
+    }
+    if (modalPrefix === 'notes') {
+      this._notesBatchDelimiter = delimiter;
+    } else {
+      this._batchDelimiter = delimiter;
+    }
+    // 更新按钮样式
+    const groupId = modalPrefix === 'notes' ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
+    const group = document.getElementById(groupId);
+    if (group) {
+      group.querySelectorAll('.delimiter-btn').forEach(btn => {
+        btn.classList.remove('active', 'notes-active');
+      });
+    }
+    this._updateBatchPreview(modalPrefix);
+  },
+
+  // 重置分隔符 UI 为默认状态
+  _resetDelimiterUI(modalPrefix) {
+    const groupId = modalPrefix === 'notes' ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    const isNotes = modalPrefix === 'notes';
+    group.querySelectorAll('.delimiter-btn').forEach(function(btn) {
+      const isDefault = btn.getAttribute('data-d') === '\\n';
+      btn.classList.toggle('active', isDefault && !isNotes);
+      btn.classList.toggle('notes-active', isDefault && isNotes);
+    });
+  },
+
+  // 处理粘贴事件：读取剪贴板纯文本，自动检测分隔符
+  _handleBatchPaste(e, modalPrefix) {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    e.preventDefault();
+    const text = clipboardData.getData('text/plain');
+    if (!text || !text.trim()) return;
+
+    const textareaId = modalPrefix === 'notes' ? 'notesBatchTextarea' : 'batchTextarea';
+    document.getElementById(textareaId).value = text;
+
+    // 自动检测分隔符
+    const detected = this._detectDelimiter(text);
+    if (modalPrefix === 'notes') {
+      this._notesBatchDelimiter = detected;
+    } else {
+      this._batchDelimiter = detected;
+    }
+
+    // 更新分隔符按钮 UI
+    const groupId = modalPrefix === 'notes' ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
+    const group = document.getElementById(groupId);
+    if (group) {
+      const isNotes = modalPrefix === 'notes';
+      group.querySelectorAll('.delimiter-btn').forEach(function(btn) {
+        const isActive = btn.getAttribute('data-d') === detected;
+        btn.classList.toggle('active', isActive && !isNotes);
+        btn.classList.toggle('notes-active', isActive && isNotes);
+      });
+    }
+    this._updateBatchPreview(modalPrefix);
+  },
+
+  // 使用 Clipboard API 读取剪贴板
+  _readClipboard(modalPrefix) {
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      this.showFloatingText('当前浏览器不支持此功能，请手动粘贴');
+      return;
+    }
+    const self = this;
+    navigator.clipboard.readText().then(function(text) {
+      if (text && text.trim()) {
+        const textareaId = modalPrefix === 'notes' ? 'notesBatchTextarea' : 'batchTextarea';
+        document.getElementById(textareaId).value = text;
+        // 自动检测分隔符
+        const detected = self._detectDelimiter(text);
+        if (modalPrefix === 'notes') {
+          self._notesBatchDelimiter = detected;
+        } else {
+          self._batchDelimiter = detected;
+        }
+        // 更新分隔符按钮 UI
+        const groupId = modalPrefix === 'notes' ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
+        const group = document.getElementById(groupId);
+        if (group) {
+          group.querySelectorAll('.delimiter-btn').forEach(function(btn) {
+            const isActive = btn.getAttribute('data-d') === detected;
+            btn.classList.toggle('active', isActive && modalPrefix !== 'notes');
+            btn.classList.toggle('notes-active', isActive && modalPrefix === 'notes');
+          });
+        }
+        self._updateBatchPreview(modalPrefix);
+        self.showFloatingText('已从剪贴板读取！📋');
+      } else {
+        self.showFloatingText('剪贴板为空');
+      }
+    }).catch(function() {
+      self.showFloatingText('无法读取剪贴板，请手动粘贴');
+    });
+  },
+
+  // ---- Batch Modals ----
   openBatchModal() {
     const modal = document.getElementById('batchModal');
     modal.classList.add('active');
     document.getElementById('batchTextarea').value = '';
+    this._batchDelimiter = '\n';
+    this._resetDelimiterUI('batch');
+    this._updateBatchPreview('batch');
     document.getElementById('batchTextarea').focus();
     AudioEngine.click();
     anime({
-      targets: '.batch-content',
+      targets: '#batchModal .batch-content',
       scale: [0.8, 1],
       duration: 300,
       easing: 'easeOutBack',
@@ -1604,7 +2095,7 @@ const UIController = {
 
   submitBatchInspirations() {
     const textarea = document.getElementById('batchTextarea');
-    const lines = textarea.value.split('\n').filter(line => line.trim());
+    const lines = this._splitByDelimiter(textarea.value, this._batchDelimiter);
     if (lines.length === 0) {
       this.showFloatingText('至少输入一行灵感哦~');
       return;
@@ -1612,7 +2103,7 @@ const UIController = {
 
     lines.forEach((line, i) => {
       setTimeout(() => {
-        this.addInspirationByText(line.trim());
+        this.addInspirationByText(line);
       }, i * 80);
     });
 
@@ -1620,6 +2111,48 @@ const UIController = {
     VibrationEngine.confirmVibe();
     this.showFloatingText(`已加入 ${lines.length} 个灵感！✨`);
     this.closeBatchModal();
+  },
+
+  // Notes batch modal
+  openNotesBatchModal() {
+    const modal = document.getElementById('notesBatchModal');
+    modal.classList.add('active');
+    document.getElementById('notesBatchTextarea').value = '';
+    this._notesBatchDelimiter = '\n';
+    this._resetDelimiterUI('notes');
+    this._updateBatchPreview('notes');
+    document.getElementById('notesBatchTextarea').focus();
+    AudioEngine.click();
+    anime({
+      targets: '#notesBatchModal .batch-content',
+      scale: [0.8, 1],
+      duration: 300,
+      easing: 'easeOutBack',
+    });
+  },
+
+  closeNotesBatchModal() {
+    document.getElementById('notesBatchModal').classList.remove('active');
+  },
+
+  submitBatchNotes() {
+    const textarea = document.getElementById('notesBatchTextarea');
+    const lines = this._splitByDelimiter(textarea.value, this._notesBatchDelimiter);
+    if (lines.length === 0) {
+      this.showFloatingText('至少输入一行小纸条哦~');
+      return;
+    }
+
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        this.addNoteByText(line);
+      }, i * 80);
+    });
+
+    AudioEngine.success();
+    VibrationEngine.confirmVibe();
+    this.showFloatingText(`已加入 ${lines.length} 张小纸条！💌`);
+    this.closeNotesBatchModal();
   },
 
   // ---- Action Card Rename ----
@@ -1656,7 +2189,7 @@ const UIController = {
   // ---- Camera ----
   _cameraStream: null,
 
-  async setupCamera() {
+  setupCamera() {
     // Will be triggered when opening camera modal
   },
 
@@ -1665,7 +2198,6 @@ const UIController = {
     modal.classList.add('active');
     document.getElementById('cameraInstruction').value = '';
 
-    // Try to access camera
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 720 }, height: { ideal: 720 } },
@@ -1677,7 +2209,6 @@ const UIController = {
       video.style.display = 'block';
       document.getElementById('cameraPlaceholder').style.display = 'none';
     } catch(e) {
-      // Camera not available, show placeholder
       document.getElementById('cameraVideo').style.display = 'none';
       document.getElementById('cameraPlaceholder').style.display = 'flex';
     }
@@ -1697,7 +2228,6 @@ const UIController = {
   capturePhoto() {
     const video = document.getElementById('cameraVideo');
     if (video.style.display === 'none' || !this._cameraStream) {
-      // No camera, trigger file upload
       document.getElementById('cameraFileInput').click();
       return;
     }
@@ -1709,7 +2239,6 @@ const UIController = {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-    // Flash effect
     anime({
       targets: '#cameraPreview',
       backgroundColor: ['#fff', '#2a2a2a'],
@@ -1719,7 +2248,6 @@ const UIController = {
 
     AudioEngine.click();
     this.closeCamera();
-    // Show photo confirmation modal
     this._pendingPhotoData = dataUrl;
     this._openPhotoConfirm(dataUrl);
   },
@@ -1775,7 +2303,7 @@ const UIController = {
   },
 
   // ---- Swipe Detection ----
-  bindSwipe(el, cardId) {
+  bindSwipe(el, cardId, view) {
     let startY = 0;
     let startX = 0;
     let moved = false;
@@ -1800,10 +2328,12 @@ const UIController = {
       if (!moved) return;
       const dy = e.changedTouches[0].clientY - startY;
       if (dy < -60) {
-        // Swipe up - dismiss
-        this.dismissCard(cardId, el);
+        if (view === 'notes') {
+          this.dismissNoteCard(cardId, el);
+        } else {
+          this.dismissCard(cardId, el);
+        }
       } else {
-        // Reset position
         anime({
           targets: el,
           translateY: 0,
@@ -1832,6 +2362,9 @@ const UIController = {
       '水彩': '🎨', '橡皮章': '🪄', '青蛙': '🐸', '薄荷': '🌿',
       '怪兽': '👾', '左手': '🤚', '长椅': '🪑', '杂志': '📰',
       '野花': '🌼', '雪花': '❄️', '音乐': '🎵',
+      '阳光': '☀️', '焦虑': '😰', '感谢': '💛', '茶': '🍵',
+      '晚霞': '🌇', '想念': '🏡', '轻松': '😌', '歌': '🎵',
+      '自己': '🤗', '猫': '🐱', '心情': '💖', '情绪': '💫',
     };
     for (const [key, emoji] of Object.entries(map)) {
       if (text.includes(key)) return emoji;
@@ -1843,15 +2376,18 @@ const UIController = {
   bindEvents() {
     // View switching
     document.getElementById('navInspiration').addEventListener('click', () => this.switchView('inspiration'));
+    document.getElementById('navNotes').addEventListener('click', () => this.switchView('notes'));
     document.getElementById('navAction').addEventListener('click', () => this.switchView('action'));
 
     // Draw buttons
     document.getElementById('drawBtn').addEventListener('click', () => this.drawInspiration());
+    document.getElementById('notesDrawBtn').addEventListener('click', () => this.drawNotes());
     document.getElementById('actionDrawBtn').addEventListener('click', () => this.drawAction());
-    // Shake button for desktop
     document.getElementById('shakeBtn').addEventListener('click', () => {
       if (this.currentView === 'inspiration') {
         this.drawInspiration();
+      } else if (this.currentView === 'notes') {
+        this.drawNotes();
       } else {
         this.drawAction();
       }
@@ -1862,7 +2398,6 @@ const UIController = {
       AudioEngine.success();
       VibrationEngine.confirmVibe();
       const overlay = document.getElementById('actionOverlay');
-      // Burst confetti
       const rect = document.getElementById('actionDoBtn').getBoundingClientRect();
       ConfettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
       this.showFloatingText('太棒了！你做到了！🌟');
@@ -1872,7 +2407,6 @@ const UIController = {
       this.closeActionOverlay();
       AudioEngine.click();
     });
-    // Close action overlay when clicking background
     document.getElementById('actionOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
         this.closeActionOverlay();
@@ -1880,121 +2414,38 @@ const UIController = {
       }
     });
 
-    // Pull-down input
-    const pullBar = document.getElementById('pullBar');
-    const pullInput = document.getElementById('pullInput');
-    const pullSubmit = document.getElementById('pullSubmit');
-    const inspirationView = document.getElementById('inspirationView');
-
-    let pullStartY = 0;
-    let pullDetected = false;
-
-    inspirationView.addEventListener('touchstart', (e) => {
-      if (inspirationView.scrollTop <= 0) {
-        pullStartY = e.touches[0].clientY;
-        pullDetected = true;
-      }
-    }, { passive: true });
-
-    inspirationView.addEventListener('touchmove', (e) => {
-      if (!pullDetected) return;
-      const dy = e.touches[0].clientY - pullStartY;
-      if (dy > 60) {
-        pullBar.classList.add('visible');
-        pullInput.focus();
-        pullDetected = false;
-        AudioEngine.click();
-      }
-    }, { passive: true });
-
-    inspirationView.addEventListener('touchend', () => { pullDetected = false; });
-
-    pullSubmit.addEventListener('click', () => {
-      this.addInspirationByText(pullInput.value);
-      pullInput.value = '';
-      pullBar.classList.remove('visible');
-      pullInput.blur();
-    });
-    pullInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        this.addInspirationByText(pullInput.value);
-        pullInput.value = '';
-        pullBar.classList.remove('visible');
-        pullInput.blur();
-      }
-    });
+    // Bind pull-down for inspiration view
+    this._bindPullDown('inspirationView', 'pullBar', 'pullInput', 'pullSubmit', 'inspiration');
+    // Bind pull-down for notes view
+    this._bindPullDown('notesView', 'notesPullBar', 'notesPullInput', 'notesPullSubmit', 'notes');
 
     // Also show pull bar on double-click of header area (desktop fallback)
     document.querySelector('.app-header').addEventListener('dblclick', () => {
-      pullBar.classList.toggle('visible');
-      if (pullBar.classList.contains('visible')) pullInput.focus();
-    });
-
-    // Long press for voice input
-    let longPressTimer = null;
-    let isLongPress = false;
-    const scatterArea = document.getElementById('scatterArea');
-
-    scatterArea.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.scatter-card') || e.target.closest('.card-action-btn')) return;
-      longPressTimer = setTimeout(() => {
-        isLongPress = true;
-        document.getElementById('recordingOverlay').classList.add('active');
-        AudioEngine.click();
-        VibrationEngine.cardTapVibe();
-        this._startVoiceRecording();
-      }, 500);
-    });
-
-    scatterArea.addEventListener('pointerup', (e) => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this.addInspirationByVoice();
-        isLongPress = false;
+      if (this.currentView === 'notes') {
+        const bar = document.getElementById('notesPullBar');
+        bar.classList.toggle('visible');
+        if (bar.classList.contains('visible')) document.getElementById('notesPullInput').focus();
+      } else {
+        const bar = document.getElementById('pullBar');
+        bar.classList.toggle('visible');
+        if (bar.classList.contains('visible')) document.getElementById('pullInput').focus();
       }
     });
 
-    scatterArea.addEventListener('pointerleave', () => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this._stopVoiceRecording();
-        isLongPress = false;
-      }
-    });
-
-    // Also allow long press on empty state
-    const inspEmpty = document.getElementById('inspirationEmpty');
-    inspEmpty.addEventListener('pointerdown', (e) => {
-      longPressTimer = setTimeout(() => {
-        isLongPress = true;
-        document.getElementById('recordingOverlay').classList.add('active');
-        AudioEngine.click();
-        VibrationEngine.cardTapVibe();
-        this._startVoiceRecording();
-      }, 500);
-    });
-    inspEmpty.addEventListener('pointerup', () => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this.addInspirationByVoice();
-        isLongPress = false;
-      }
-    });
-    inspEmpty.addEventListener('pointerleave', () => {
-      clearTimeout(longPressTimer);
-      if (isLongPress) {
-        document.getElementById('recordingOverlay').classList.remove('active');
-        this._stopVoiceRecording();
-        isLongPress = false;
-      }
-    });
+    // ---- Long press for voice input ----
+    this._bindLongPress('scatterArea', 'inspiration');
+    this._bindLongPress('notesScatterArea', 'notes');
+    this._bindLongPress('inspirationEmpty', 'inspiration');
+    this._bindLongPress('notesEmpty', 'notes');
 
     // Click on deselected area to deselect
-    scatterArea.addEventListener('click', (e) => {
-      if (this.selectedCardId && !e.target.closest('.scatter-card') && !isLongPress) {
+    document.getElementById('scatterArea').addEventListener('click', (e) => {
+      if (this.selectedCardId && !e.target.closest('.scatter-card')) {
+        this.deselectCard();
+      }
+    });
+    document.getElementById('notesScatterArea').addEventListener('click', (e) => {
+      if (this.selectedCardId && !e.target.closest('.scatter-card')) {
         this.deselectCard();
       }
     });
@@ -2005,9 +2456,6 @@ const UIController = {
     document.getElementById('cameraCloseBtn').addEventListener('click', () => this.closeCamera());
     document.getElementById('cameraFileInput').addEventListener('change', (e) => {
       if (e.target.files[0]) this.handleFileUpload(e.target.files[0]);
-    });
-    document.getElementById('cameraUploadLabel').addEventListener('click', (e) => {
-      // This is a label, clicking it triggers the file input
     });
 
     // Photo confirm modal
@@ -2020,12 +2468,11 @@ const UIController = {
     document.getElementById('photoConfirmModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) this.closePhotoConfirm();
     });
-    // Enter key to save
     document.getElementById('photoConfirmName').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.confirmPhotoSave();
     });
 
-    // Batch input
+    // Batch input (inspiration)
     document.getElementById('batchOpenBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       this.openBatchModal();
@@ -2042,8 +2489,90 @@ const UIController = {
         this.submitBatchInspirations();
       }
     });
+    // 分隔符选择按钮
+    document.getElementById('batchDelimiterGroup').addEventListener('click', (e) => {
+      const btn = e.target.closest('.delimiter-btn');
+      if (!btn) return;
+      const d = btn.getAttribute('data-d');
+      this._setBatchDelimiter(d, 'batch');
+    });
+    // 文本输入实时预览
+    document.getElementById('batchTextarea').addEventListener('input', () => {
+      this._updateBatchPreview('batch');
+    });
+    // 粘贴事件处理
+    document.getElementById('batchTextarea').addEventListener('paste', (e) => {
+      this._handleBatchPaste(e, 'batch');
+    });
+    // 从剪贴板读取按钮
+    document.getElementById('batchClipboardBtn').addEventListener('click', () => {
+      this._readClipboard('batch');
+    });
     document.getElementById('batchModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) this.closeBatchModal();
+    });
+
+    // Batch input (notes)
+    document.getElementById('notesBatchOpenBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openNotesBatchModal();
+    });
+    document.getElementById('notesBatchCloseBtn').addEventListener('click', () => {
+      this.closeNotesBatchModal();
+    });
+    document.getElementById('notesBatchSubmitBtn').addEventListener('click', () => {
+      this.submitBatchNotes();
+    });
+    document.getElementById('notesBatchTextarea').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        this.submitBatchNotes();
+      }
+    });
+    // 分隔符选择按钮
+    document.getElementById('notesBatchDelimiterGroup').addEventListener('click', (e) => {
+      const btn = e.target.closest('.delimiter-btn');
+      if (!btn) return;
+      const d = btn.getAttribute('data-d');
+      this._setBatchDelimiter(d, 'notes');
+    });
+    // 文本输入实时预览
+    document.getElementById('notesBatchTextarea').addEventListener('input', () => {
+      this._updateBatchPreview('notes');
+    });
+    // 粘贴事件处理
+    document.getElementById('notesBatchTextarea').addEventListener('paste', (e) => {
+      this._handleBatchPaste(e, 'notes');
+    });
+    // 从剪贴板读取按钮
+    document.getElementById('notesBatchClipboardBtn').addEventListener('click', () => {
+      this._readClipboard('notes');
+    });
+    document.getElementById('notesBatchModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) this.closeNotesBatchModal();
+    });
+
+    // History modal
+    document.getElementById('historyOpenBtn').addEventListener('click', () => {
+      this.renderHistory();
+      document.getElementById('historyModal').classList.add('active');
+      anime({
+        targets: '#historyModal .batch-content',
+        scale: [0.8, 1],
+        duration: 300,
+        easing: 'easeOutBack',
+      });
+    });
+    document.getElementById('historyCloseBtn').addEventListener('click', () => {
+      document.getElementById('historyModal').classList.remove('active');
+    });
+    document.getElementById('historyClearBtn').addEventListener('click', () => {
+      CardManager.clearDeleted();
+      this.renderHistory();
+      this.showFloatingText('已清空！🗑️');
+    });
+    document.getElementById('historyModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) document.getElementById('historyModal').classList.remove('active');
     });
 
     // Shake detection (mobile)
@@ -2060,6 +2589,8 @@ const UIController = {
           lastShake = now;
           if (this.currentView === 'inspiration') {
             this.drawInspiration();
+          } else if (this.currentView === 'notes') {
+            this.drawNotes();
           }
         }
       });
@@ -2068,10 +2599,15 @@ const UIController = {
     // Keyboard shortcuts for desktop
     window.addEventListener('keydown', (e) => {
       if (e.key === '1') this.switchView('inspiration');
-      if (e.key === '2') this.switchView('action');
+      if (e.key === '2') this.switchView('notes');
+      if (e.key === '3') this.switchView('action');
       if (e.key === ' ' && this.currentView === 'inspiration') {
         e.preventDefault();
         this.drawInspiration();
+      }
+      if (e.key === ' ' && this.currentView === 'notes') {
+        e.preventDefault();
+        this.drawNotes();
       }
       if (e.key === ' ' && this.currentView === 'action') {
         e.preventDefault();
@@ -2084,7 +2620,12 @@ const UIController = {
       }
       if (e.key === 'n' && e.ctrlKey) {
         e.preventDefault();
-        if (this.currentView === 'inspiration') {
+        if (this.currentView === 'notes') {
+          document.getElementById('notesPullBar').classList.toggle('visible');
+          if (document.getElementById('notesPullBar').classList.contains('visible')) {
+            document.getElementById('notesPullInput').focus();
+          }
+        } else if (this.currentView === 'inspiration') {
           document.getElementById('pullBar').classList.toggle('visible');
           if (document.getElementById('pullBar').classList.contains('visible')) {
             document.getElementById('pullInput').focus();
@@ -2101,11 +2642,13 @@ const UIController = {
     }, { passive: true });
     viewsWrapper.addEventListener('touchend', (e) => {
       const dx = e.changedTouches[0].clientX - swipeStartX;
+      const viewOrder = ['inspiration', 'notes', 'action'];
+      const currentIdx = viewOrder.indexOf(this.currentView);
       if (Math.abs(dx) > 60) {
-        if (dx < 0 && this.currentView === 'inspiration') {
-          this.switchView('action');
-        } else if (dx > 0 && this.currentView === 'action') {
-          this.switchView('inspiration');
+        if (dx < 0 && currentIdx < 2) {
+          this.switchView(viewOrder[currentIdx + 1]);
+        } else if (dx > 0 && currentIdx > 0) {
+          this.switchView(viewOrder[currentIdx - 1]);
         }
       }
     });
@@ -2113,6 +2656,130 @@ const UIController = {
     // Initial setup
     document.getElementById('addActionBtn').style.display = 'none';
     document.getElementById('actionDrawBtn').style.display = 'none';
+    document.getElementById('notesDrawBtn').style.display = 'none';
+  },
+
+  // ---- Pull-down binding helper ----
+  _bindPullDown(viewId, barId, inputId, submitId, type) {
+    const pullBar = document.getElementById(barId);
+    const pullInput = document.getElementById(inputId);
+    const pullSubmit = document.getElementById(submitId);
+    const view = document.getElementById(viewId);
+
+    let pullStartY = 0;
+    let pullDetected = false;
+
+    view.addEventListener('touchstart', (e) => {
+      if (view.scrollTop <= 0) {
+        pullStartY = e.touches[0].clientY;
+        pullDetected = true;
+      }
+    }, { passive: true });
+
+    view.addEventListener('touchmove', (e) => {
+      if (!pullDetected) return;
+      const dy = e.touches[0].clientY - pullStartY;
+      if (dy > 60) {
+        pullBar.classList.add('visible');
+        pullInput.focus();
+        pullDetected = false;
+        AudioEngine.click();
+      }
+    }, { passive: true });
+
+    view.addEventListener('touchend', () => { pullDetected = false; });
+
+    pullSubmit.addEventListener('click', () => {
+      if (type === 'notes') {
+        this.addNoteByText(pullInput.value);
+      } else {
+        this.addInspirationByText(pullInput.value);
+      }
+      pullInput.value = '';
+      pullBar.classList.remove('visible');
+      pullInput.blur();
+    });
+    pullInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (type === 'notes') {
+          this.addNoteByText(pullInput.value);
+        } else {
+          this.addInspirationByText(pullInput.value);
+        }
+        pullInput.value = '';
+        pullBar.classList.remove('visible');
+        pullInput.blur();
+      }
+    });
+  },
+
+  // ---- Long press binding helper ----
+  _bindLongPress(areaId, viewType) {
+    const area = document.getElementById(areaId);
+    let longPressTimer = null;
+    let isLongPress = false;
+
+    area.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.scatter-card') || e.target.closest('.card-action-btn')) return;
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        document.getElementById('recordingOverlay').classList.add('active');
+        AudioEngine.click();
+        VibrationEngine.cardTapVibe();
+        this._startVoiceRecording();
+      }, 500);
+    });
+
+    area.addEventListener('pointerup', (e) => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        this.addInspirationByVoice();
+        isLongPress = false;
+      }
+    });
+
+    area.addEventListener('pointerleave', () => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) {
+        document.getElementById('recordingOverlay').classList.remove('active');
+        this._stopVoiceRecording();
+        isLongPress = false;
+      }
+    });
+  },
+
+  // ---- History rendering ----
+  renderHistory() {
+    const list = document.getElementById('historyList');
+    const items = CardManager.getDeletedItems();
+    if (items.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:#b8a59a;padding:20px;">暂无删除记录</div>';
+      return;
+    }
+    const typeLabels = { inspiration: '🫙 灵感', note: '💌 小纸条', action: '🎬 动作' };
+    list.innerHTML = items.map((item, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
+        background:#FFF8F0;border-radius:12px;font-size:14px;color:#4A3728;">
+        <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          <span style="font-size:11px;color:#b8a59a;">${typeLabels[item.type] || '📌'}</span>
+          ${this.escapeHtml(item.text || item.instruction || '(无文字)')}
+        </div>
+        <button data-restore="${i}" style="background:#DA77F2;color:#fff;border:none;border-radius:10px;
+          padding:4px 10px;font-size:12px;cursor:pointer;margin-left:8px;white-space:nowrap;">恢复</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-restore]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.restore);
+        CardManager.restoreDeleted(idx);
+        this.renderHistory();
+        this.renderAll();
+        this.showFloatingText('已恢复！✨');
+        AudioEngine.ding();
+      });
+    });
   }
 };
 
@@ -2129,11 +2796,10 @@ function positionAddButton() {
 
 document.addEventListener('DOMContentLoaded', () => {
   UIController.init();
-  AudioEngine.click(); // Warm up audio context
+  AudioEngine.click();
   positionAddButton();
 });
 
-// Handle the add button positioning for responsive
 window.addEventListener('resize', positionAddButton);
 </script>
 </body>
