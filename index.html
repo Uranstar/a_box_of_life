@@ -530,6 +530,43 @@ body {
 	  transition: background 0.2s;
 	}
 	.draw-overlay-delete:active { background: rgba(255,107,107,0.4); }
+
+	/* ====== Review Overlay (逐个回顾) ====== */
+	.review-overlay {
+	  position: fixed; inset: 0; z-index: 72;
+	  background: rgba(0,0,0,0.6);
+	  display: flex; align-items: center; justify-content: center;
+	  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+	  padding: 20px;
+	}
+	.review-overlay.active { opacity: 1; pointer-events: auto; }
+	.review-card {
+	  width: 85%; max-width: 360px; padding: 36px 28px 28px;
+	  border-radius: 24px; color: #fff; text-align: center;
+	  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+	  transform: scale(0.85); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	.review-overlay.active .review-card { transform: scale(1); }
+	.review-label { font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+	.review-text { font-size: 28px; font-weight: 700; line-height: 1.5;
+	  margin: 16px 0; min-height: 60px; word-break: break-word; }
+	.review-bingo { font-size: 16px; opacity: 0.85; margin-bottom: 6px; }
+	.review-progress { font-size: 13px; opacity: 0.6; margin-bottom: 20px; }
+	.review-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+	.review-btn { padding: 12px 18px; border-radius: 14px; border: none;
+	  font-size: 15px; font-weight: 600; cursor: pointer; color: #fff;
+	  transition: transform 0.12s, background 0.15s; }
+	.review-btn:active { transform: scale(0.93); }
+	.review-btn.bingo-btn { background: rgba(255,255,255,0.25); }
+	.review-btn.convert-btn { background: rgba(56,178,172,0.55); }
+	.review-btn.skip-btn { background: rgba(255,255,255,0.12); }
+	.review-btn.delete-btn { background: rgba(255,107,107,0.45); }
+	.review-close {
+	  background: none; border: none; color: rgba(255,255,255,0.5);
+	  font-size: 14px; cursor: pointer; margin-top: 18px;
+	  transition: color 0.15s;
+	}
+	.review-close:active { color: rgba(255,255,255,0.8); }
 </style>
 </head>
 <body>
@@ -582,6 +619,13 @@ body {
                    display: none; align-items: center; justify-content: center;">
             🔄
           </button>
+          <button id="reviewInspBtn" title="逐个回顾"
+            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid #6C5CE7; background: #fff; color: #6C5CE7;
+                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
+                   display: none; align-items: center; justify-content: center;">
+            🔍
+          </button>
         </div>
       </div>
 
@@ -612,6 +656,13 @@ body {
                    font-size: 18px; cursor: pointer; transition: transform 0.15s;
                    display: none; align-items: center; justify-content: center;">
             🔄
+          </button>
+          <button id="reviewNotesBtn" title="逐个回顾"
+            style="margin-left: 6px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid #6C5CE7; background: #fff; color: #6C5CE7;
+                   font-size: 18px; cursor: pointer; transition: transform 0.15s;
+                   display: none; align-items: center; justify-content: center;">
+            🔍
           </button>
         </div>
       </div>
@@ -778,6 +829,23 @@ body {
       background:linear-gradient(135deg,#DA77F2,#9B59B6);color:#fff;font-size:16px;font-weight:700;cursor:pointer;">
       ✨ 全部加入小纸条
     </button>
+  </div>
+</div>
+
+<!-- Review Overlay (逐个回顾) -->
+<div class="review-overlay" id="reviewOverlay">
+  <div class="review-card" id="reviewCard">
+    <div class="review-label" id="reviewLabel">🔍 逐个回顾</div>
+    <div class="review-text" id="reviewText"></div>
+    <div class="review-bingo" id="reviewBingo"></div>
+    <div class="review-progress" id="reviewProgress"></div>
+    <div class="review-actions">
+      <button class="review-btn bingo-btn" id="reviewBingoBtn">✅ Bingo</button>
+      <button class="review-btn convert-btn" id="reviewConvertBtn">🎬 转动作</button>
+      <button class="review-btn skip-btn" id="reviewSkipBtn">⏭ 跳过</button>
+      <button class="review-btn delete-btn" id="reviewDeleteBtn">🗑 删除</button>
+    </div>
+    <button class="review-close" id="reviewCloseBtn">✕ 关闭</button>
   </div>
 </div>
 
@@ -1043,6 +1111,7 @@ const CardManager = {
       text: text || this._randomInspiration(),
       color: color || CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
       createdAt: Date.now(),
+      bingoCount: 0,
     };
     this._inspirationCards.unshift(card);
     this.save();
@@ -1060,6 +1129,17 @@ const CardManager = {
 
   getInspirationCards() { return [...this._inspirationCards]; },
 
+  incrementBingo(type, id) {
+    const arr = type === 'inspiration' ? this._inspirationCards : this._notesCards;
+    const card = arr.find(c => c.id === id);
+    if (card) {
+      card.bingoCount = (card.bingoCount || 0) + 1;
+      this.save();
+      return card.bingoCount;
+    }
+    return 0;
+  },
+
   // ---- Notes Cards (情绪小纸条) ----
   addNote(text, color) {
     const card = {
@@ -1067,6 +1147,7 @@ const CardManager = {
       text: text || this._randomNote(),
       color: color || NOTES_COLORS[Math.floor(Math.random() * NOTES_COLORS.length)],
       createdAt: Date.now(),
+      bingoCount: 0,
     };
     this._notesCards.unshift(card);
     this.save();
@@ -1365,8 +1446,11 @@ const UIController = {
     if (viewEl2) viewEl2.classList.remove('has-stack');
     // 隐藏刷新排列按钮
     const shuffleId2 = areaId === 'notesScatterArea' ? 'notesShuffleBtn' : 'shuffleBtn';
+    const reviewId2 = areaId === 'notesScatterArea' ? 'reviewNotesBtn' : 'reviewInspBtn';
     const shuffleBtn2 = document.getElementById(shuffleId2);
+    const reviewBtn2 = document.getElementById(reviewId2);
     if (shuffleBtn2) shuffleBtn2.style.display = 'none';
+    if (reviewBtn2) reviewBtn2.style.display = 'none';
 
     // Remove existing cards, keep empty state
     area.querySelectorAll('.scatter-card').forEach(el => el.remove());
@@ -1477,10 +1561,13 @@ const UIController = {
     // 切换为可滚动模式，固定底部按钮
     if (view) view.classList.add('has-stack');
     area.style.minHeight = 'auto';
-    // 显示刷新排列按钮
+    // 显示刷新排列按钮和回顾按钮
     const shuffleId = isNotes ? 'notesShuffleBtn' : 'shuffleBtn';
+    const reviewId = isNotes ? 'reviewNotesBtn' : 'reviewInspBtn';
     const shuffleBtn = document.getElementById(shuffleId);
+    const reviewBtn = document.getElementById(reviewId);
     if (shuffleBtn) shuffleBtn.style.display = 'flex';
+    if (reviewBtn) reviewBtn.style.display = 'flex';
 
     // 初始化分页状态
     const PAGE_SIZE = 12;
@@ -2154,6 +2241,119 @@ const UIController = {
 
   _closeDrawOverlay() {
     document.getElementById('drawOverlay').classList.remove('active');
+  },
+
+  // ---- Review Mode (逐个回顾) ----
+  _reviewState: null,
+
+  _startReview(type) {
+    const cards = type === 'inspiration' ? CardManager.getInspirationCards() : CardManager.getNotesCards();
+    if (cards.length === 0) {
+      this.showFloatingText('还没有卡片，先添加一些吧~');
+      return;
+    }
+    this._reviewState = {
+      type: type,
+      cards: cards,
+      seen: new Set(),
+      bingoTotal: 0,
+    };
+    AudioEngine.click();
+    document.getElementById('reviewOverlay').classList.add('active');
+    if (type === 'notes') {
+      document.getElementById('reviewLabel').textContent = '🔍 回顾小纸条';
+    } else {
+      document.getElementById('reviewLabel').textContent = '🔍 回顾灵感';
+    }
+    this._nextReviewCard();
+  },
+
+  _nextReviewCard() {
+    const state = this._reviewState;
+    if (!state) return;
+
+    // 过滤掉已看过的，或者如果全部看完则重置
+    let remaining = state.cards.filter(function(c) { return !state.seen.has(c.id); });
+    if (remaining.length === 0) {
+      // 全部回顾完毕
+      this._showReviewComplete();
+      return;
+    }
+
+    const card = remaining[Math.floor(Math.random() * remaining.length)];
+    state.seen.add(card.id);
+
+    const cardEl = document.getElementById('reviewCard');
+    cardEl.style.backgroundColor = card.color || '#FF8C69';
+    document.getElementById('reviewText').textContent = card.text;
+    document.getElementById('reviewBingo').textContent = (card.bingoCount || 0) > 0 ? '🏆 Bingo: ' + card.bingoCount + ' 次' : '';
+    document.getElementById('reviewProgress').textContent = '已看 ' + state.seen.size + ' / ' + state.cards.length;
+
+    state._currentCard = card;
+  },
+
+  _showReviewComplete() {
+    const state = this._reviewState;
+    document.getElementById('reviewText').textContent = '🎉 全部回顾完毕！';
+    document.getElementById('reviewBingo').textContent = state.bingoTotal > 0 ? '本轮标记 ' + state.bingoTotal + ' 次 Bingo' : '';
+    document.getElementById('reviewProgress').textContent = '共 ' + state.cards.length + ' 张卡片';
+  },
+
+  _closeReview() {
+    document.getElementById('reviewOverlay').classList.remove('active');
+    this._reviewState = null;
+  },
+
+  _reviewBingo() {
+    const state = this._reviewState;
+    if (!state || !state._currentCard) return;
+    const card = state._currentCard;
+    CardManager.incrementBingo(state.type, card.id);
+    state.bingoTotal++;
+    AudioEngine.success();
+    VibrationEngine.confirmVibe();
+    this.showFloatingText('✅ Bingo！');
+    this._nextReviewCard();
+  },
+
+  _reviewConvert() {
+    const state = this._reviewState;
+    if (!state || !state._currentCard) return;
+    const card = state._currentCard;
+    if (state.type === 'notes') {
+      CardManager.convertNoteToAction(card.id);
+    } else {
+      CardManager.convertToAction(card.id);
+    }
+    // 从当前列表移除
+    state.cards = state.cards.filter(function(c) { return c.id !== card.id; });
+    this.renderAll();
+    AudioEngine.cardFly();
+    VibrationEngine.confirmVibe();
+    this.showFloatingText('已转为动作开关！🎬');
+    setTimeout(() => { this._nextReviewCard(); }, 200);
+  },
+
+  _reviewDelete() {
+    const state = this._reviewState;
+    if (!state || !state._currentCard) return;
+    const card = state._currentCard;
+    if (state.type === 'notes') {
+      CardManager.removeNote(card.id);
+    } else {
+      CardManager.removeInspiration(card.id);
+    }
+    state.cards = state.cards.filter(function(c) { return c.id !== card.id; });
+    this.renderAll();
+    AudioEngine.firework();
+    VibrationEngine.dismissVibe();
+    this.showFloatingText('已删除！🗑️');
+    this._nextReviewCard();
+  },
+
+  _reviewSkip() {
+    AudioEngine.click();
+    this._nextReviewCard();
   },
 
   // ---- Adding Cards ----
@@ -2836,6 +3036,18 @@ const UIController = {
       this._shuffleStackCards('notesScatterArea');
       AudioEngine.shuffle();
       VibrationEngine.shuffleVibe();
+    });
+
+    // Review mode buttons
+    document.getElementById('reviewInspBtn').addEventListener('click', () => { this._startReview('inspiration'); });
+    document.getElementById('reviewNotesBtn').addEventListener('click', () => { this._startReview('notes'); });
+    document.getElementById('reviewBingoBtn').addEventListener('click', () => { this._reviewBingo(); });
+    document.getElementById('reviewConvertBtn').addEventListener('click', () => { this._reviewConvert(); });
+    document.getElementById('reviewSkipBtn').addEventListener('click', () => { this._reviewSkip(); });
+    document.getElementById('reviewDeleteBtn').addEventListener('click', () => { this._reviewDelete(); });
+    document.getElementById('reviewCloseBtn').addEventListener('click', () => { this._closeReview(); AudioEngine.click(); });
+    document.getElementById('reviewOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) { this._closeReview(); AudioEngine.click(); }
     });
 
     // Bind pull-down for inspiration view
