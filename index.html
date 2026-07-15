@@ -448,6 +448,53 @@ body {
 	  transition: all 0.2s;
 	}
 	.batch-preview-text.notes-preview { color: #DA77F2; }
+
+	/* ====== Stack Card Layout (for many cards) ====== */
+	.stack-container {
+	  display: flex; flex-direction: column;
+	  padding: 4px 10px;
+	}
+	.stack-card {
+	  display: flex; align-items: center; gap: 8px;
+	  padding: 10px 14px; margin-top: -3px;
+	  border-radius: 12px; color: #fff; font-size: 14px; font-weight: 600;
+	  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	  cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+	  position: relative; z-index: 1; min-height: 42px;
+	  -webkit-tap-highlight-color: transparent;
+	}
+	.stack-card:first-child { margin-top: 0; }
+	.stack-card:active { transform: scale(0.97); z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+	.stack-card .stack-text {
+	  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	  line-height: 1.3;
+	}
+	.stack-card .stack-del {
+	  width: 26px; height: 26px; border-radius: 50%; border: none;
+	  background: rgba(255,255,255,0.3); color: #fff; font-size: 13px;
+	  cursor: pointer; flex-shrink: 0; display: flex;
+	  align-items: center; justify-content: center;
+	  transition: background 0.15s;
+	}
+	.stack-card .stack-del:active { background: rgba(255,255,255,0.55); }
+	.stack-card .stack-convert {
+	  width: 26px; height: 26px; border-radius: 50%; border: none;
+	  background: rgba(255,255,255,0.3); color: #fff; font-size: 12px;
+	  cursor: pointer; flex-shrink: 0; display: flex;
+	  align-items: center; justify-content: center;
+	  transition: background 0.15s;
+	}
+	.stack-card .stack-convert:active { background: rgba(255,255,255,0.55); }
+
+	/* View with fixed bottom — scatter area becomes scrollable */
+	.view.has-stack {
+	  overflow-y: auto; -webkit-overflow-scrolling: touch;
+	}
+	.view.has-stack .center-btn-area {
+	  position: sticky; bottom: 0;
+	  background: linear-gradient(0deg, rgba(255,248,240,0.98) 60%, rgba(255,248,240,0) 100%);
+	  padding: 16px 0 12px; z-index: 10;
+	}
 </style>
 </head>
 <body>
@@ -854,6 +901,7 @@ const VibrationEngine = {
 // ============================================================
 //  CARD DATA MANAGER
 // ============================================================
+const STACK_THRESHOLD = 20; // 超过此数量切换为紧凑堆叠布局
 const CARD_COLORS = [
   '#FF6B6B', '#FFA94D', '#FFD43B', '#69DB7C',
   '#4DABF7', '#DA77F2', '#F783AC', '#63E6BE',
@@ -1246,6 +1294,17 @@ const UIController = {
     const area = document.getElementById(areaId);
     const cardsList = cards;
 
+    // 卡片数量超过阈值 → 切换为紧凑堆叠布局
+    if (cardsList.length > STACK_THRESHOLD) {
+      this._renderStackCards(areaId, cardsList, emptyId);
+      return;
+    }
+
+    // 散落模式：清除堆叠相关的 class
+    const viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
+    const viewEl2 = document.getElementById(viewId2);
+    if (viewEl2) viewEl2.classList.remove('has-stack');
+
     // Remove existing cards, keep empty state
     area.querySelectorAll('.scatter-card').forEach(el => el.remove());
 
@@ -1324,6 +1383,88 @@ const UIController = {
       this.bindSwipe(el, card.id, isNotes ? 'notes' : 'inspiration');
 
       area.appendChild(el);
+    });
+  },
+
+  // ---- 紧凑堆叠渲染（卡片 > STACK_THRESHOLD 时自动启用）----
+  _renderStackCards(areaId, cards, emptyId) {
+    const area = document.getElementById(areaId);
+    const isNotes = areaId === 'notesScatterArea';
+    const viewId = isNotes ? 'notesView' : 'inspirationView';
+    const view = document.getElementById(viewId);
+
+    // 移除旧卡片，保留空状态元素
+    area.querySelectorAll('.scatter-card, .stack-container').forEach(el => el.remove());
+
+    if (cards.length === 0) {
+      area.style.minHeight = '300px';
+      if (view) view.classList.remove('has-stack');
+      return;
+    }
+
+    // 切换为可滚动模式，固定底部按钮
+    if (view) view.classList.add('has-stack');
+    area.style.minHeight = 'auto';
+
+    // 一次性构建 HTML，减少 DOM 操作
+    const self = this;
+    let html = '<div class="stack-container">';
+    cards.forEach(function(card) {
+      const text = self.escapeHtml(card.text);
+      html += '<div class="stack-card" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';">';
+      html += '<span class="stack-text">' + text + '</span>';
+      html += '<button class="stack-convert" data-action="stack-convert" title="转为动作">🤏</button>';
+      html += '<button class="stack-del" data-action="stack-dismiss" title="删除">✕</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+    area.insertAdjacentHTML('beforeend', html);
+
+    // 事件委托：一个监听器处理所有交互
+    this._bindStackEvents(area, isNotes);
+  },
+
+  // 事件委托：堆叠卡片容器的统一事件监听
+  _bindStackEvents(area, isNotes) {
+    const self = this;
+
+    area.addEventListener('click', function(e) {
+      const card = e.target.closest('.stack-card');
+      if (!card) return;
+
+      const id = parseInt(card.dataset.id);
+      const action = e.target.closest('[data-action]');
+      const actionType = action ? action.dataset.action : null;
+
+      if (actionType === 'stack-dismiss') {
+        e.stopPropagation();
+        card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        card.style.transform = 'translateX(120%)';
+        card.style.opacity = '0';
+        AudioEngine.firework();
+        VibrationEngine.dismissVibe();
+        setTimeout(function() {
+          if (isNotes) { CardManager.removeNote(id); }
+          else { CardManager.removeInspiration(id); }
+          self.renderAll();
+          self.showFloatingText(isNotes ? '小纸条飘走了~ 💌' : '又排除了一个，酷！🫧');
+        }, 300);
+      } else if (actionType === 'stack-convert') {
+        e.stopPropagation();
+        AudioEngine.cardFly();
+        VibrationEngine.confirmVibe();
+        const actionCard = isNotes ? CardManager.convertNoteToAction(id) : CardManager.convertToAction(id);
+        self.renderAll();
+        if (actionCard) self.showFloatingText(isNotes ? '小纸条已转为动作开关！💌→🎬' : '已加入动作开关！✨');
+      } else {
+        const cards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+        const selected = cards.find(function(c) { return c.id === id; });
+        if (selected) {
+          AudioEngine.pop();
+          VibrationEngine.cardTapVibe();
+          self.showFloatingText(selected.text);
+        }
+      }
     });
   },
 
@@ -1668,6 +1809,28 @@ const UIController = {
     AudioEngine.shuffle();
     VibrationEngine.shuffleVibe();
 
+    // 堆叠模式：直接随机抽一张，不做全量动画
+    if (cards.length > STACK_THRESHOLD) {
+      const randomCard = cards[Math.floor(Math.random() * cards.length)];
+      setTimeout(() => {
+        // 高亮选中的堆叠卡片
+        const stackCard = document.querySelector('#scatterArea .stack-card[data-id="' + randomCard.id + '"]');
+        if (stackCard) {
+          stackCard.style.transform = 'scale(1.03)';
+          stackCard.style.boxShadow = '0 6px 24px rgba(0,0,0,0.25)';
+          stackCard.style.zIndex = '100';
+          setTimeout(() => {
+            stackCard.style.transform = '';
+            stackCard.style.boxShadow = '';
+            stackCard.style.zIndex = '';
+          }, 800);
+        }
+        AudioEngine.ding();
+        this.showFloatingText('🎲 ' + randomCard.text);
+      }, 200);
+      return;
+    }
+
     const cardEls = document.querySelectorAll('#scatterArea .scatter-card');
     const area = document.getElementById('scatterArea');
     const areaRect = area.getBoundingClientRect();
@@ -1712,6 +1875,27 @@ const UIController = {
 
     AudioEngine.shuffle();
     VibrationEngine.shuffleVibe();
+
+    // 堆叠模式：直接随机抽一张，不做全量动画
+    if (cards.length > STACK_THRESHOLD) {
+      const randomCard = cards[Math.floor(Math.random() * cards.length)];
+      setTimeout(() => {
+        const stackCard = document.querySelector('#notesScatterArea .stack-card[data-id="' + randomCard.id + '"]');
+        if (stackCard) {
+          stackCard.style.transform = 'scale(1.03)';
+          stackCard.style.boxShadow = '0 6px 24px rgba(0,0,0,0.25)';
+          stackCard.style.zIndex = '100';
+          setTimeout(() => {
+            stackCard.style.transform = '';
+            stackCard.style.boxShadow = '';
+            stackCard.style.zIndex = '';
+          }, 800);
+        }
+        AudioEngine.ding();
+        this.showFloatingText('💌 ' + randomCard.text);
+      }, 200);
+      return;
+    }
 
     const cardEls = document.querySelectorAll('#notesScatterArea .scatter-card');
     const area = document.getElementById('notesScatterArea');
