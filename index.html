@@ -2069,31 +2069,31 @@ const UIController = {
 
     const areaRect = area.getBoundingClientRect();
     const areaW = areaRect.width || 350;
-    const cols = Math.max(2, Math.floor(areaW / 140));
-    const rows = Math.ceil(cardsList.length / cols);
-    area.style.minHeight = Math.max(300, rows * 130 + 40) + 'px';
+    var cols = Math.max(2, Math.floor(areaW / 150));
+    var rows = Math.ceil(cardsList.length / cols);
+    area.style.minHeight = Math.max(300, rows * 140 + 40) + 'px';
 
-    const self = this;
+    var self = this;
 
-    cardsList.forEach((card, i) => {
-      const el = document.createElement('div');
+    cardsList.forEach(function(card, i) {
+      var el = document.createElement('div');
       el.className = 'scatter-card';
       if (selectedCardId === card.id) el.classList.add('selected');
-      if (this._selectMode) el.classList.add('select-mode');
+      if (self._selectMode) el.classList.add('select-mode');
       el.dataset.id = card.id;
       el.dataset.view = areaId === 'scatterArea' ? 'inspiration' : 'notes';
       el.style.backgroundColor = card.color;
-      el.style.width = '135px';
-      el.style.padding = '14px 12px';
+      el.style.width = '130px';
+      el.style.padding = '12px 10px';
 
       // Calculate scattered position
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const baseX = (areaW / (cols + 1)) * (col + 1) - 67;
-      const baseY = 20 + row * 125;
-      const offsetX = (Math.random() - 0.5) * 30;
-      const offsetY = (Math.random() - 0.5) * 20;
-      const rotation = (Math.random() - 0.5) * 12;
+      var col = i % cols;
+      var row = Math.floor(i / cols);
+      var baseX = (areaW / (cols + 1)) * (col + 1) - 65;
+      var baseY = 20 + row * 135;
+      var offsetX = (Math.random() - 0.5) * 10;
+      var offsetY = (Math.random() - 0.5) * 8;
+      var rotation = (Math.random() - 0.5) * 5;
 
       el.style.left = (baseX + offsetX) + 'px';
       el.style.top = (baseY + offsetY) + 'px';
@@ -2245,24 +2245,26 @@ const UIController = {
     // 计算当前已加载总数，用于确定新卡片的基础行列位置
     const existingCards = container.querySelectorAll('.scatter-page-card').length;
     const areaW = area.getBoundingClientRect().width || 340;
-    const cols = Math.max(2, Math.floor(areaW / 145));
-    const rowHeight = 100;
+    const cols = Math.max(2, Math.floor(areaW / 150));
+    const rowHeight = 130;
+    var cardW = Math.min(130, Math.floor(areaW / cols) - 20);
 
-    let html = '';
+    var html = '';
     batch.forEach(function(card, idx) {
-      const globalIdx = existingCards + idx;
-      const col = globalIdx % cols;
-      const row = Math.floor(globalIdx / cols);
-      const baseX = (areaW / (cols + 1)) * (col + 1) - 65;
-      const baseY = 10 + row * rowHeight;
-      const offsetX = (Math.random() - 0.5) * 24;
-      const offsetY = (Math.random() - 0.5) * 16;
-      const rotation = (Math.random() - 0.5) * 12;
+      var globalIdx = existingCards + idx;
+      var col = globalIdx % cols;
+      var row = Math.floor(globalIdx / cols);
+      var baseX = (areaW / (cols + 1)) * (col + 1) - cardW / 2;
+      var baseY = 10 + row * rowHeight;
+      // 极小随机偏移，避免遮挡
+      var offsetX = (Math.random() - 0.5) * 6;
+      var offsetY = (Math.random() - 0.5) * 4;
+      var rotation = (Math.random() - 0.5) * 3;
 
-      const text = self.escapeHtml(card.text);
-      const selClass = self._selectMode ? ' select-mode' : '';
-      const cbClass = self._selectMode ? ' visible' : '';
-      const cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
+      var text = self.escapeHtml(card.text);
+      var selClass = self._selectMode ? ' select-mode' : '';
+      var cbClass = self._selectMode ? ' visible' : '';
+      var cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
       html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';left:' + (baseX + offsetX) + 'px;top:' + (baseY + offsetY) + 'px;transform:rotate(' + rotation + 'deg);">';
       const stackDefId = isNotes ? 'default-n' : 'default-i';
       const g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(g => g.id === card.groupId) : null;
@@ -2409,16 +2411,16 @@ const UIController = {
 
     const areaRect = area.getBoundingClientRect();
     const areaW = areaRect.width || 350;
-    const cols = Math.max(2, Math.floor(areaW / 140));
+    var cols = Math.max(2, Math.floor(areaW / 150));
 
     cards.forEach(function(card, i) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const baseX = (areaW / (cols + 1)) * (col + 1) - 67;
-      const baseY = 20 + row * 125;
-      const offsetX = (Math.random() - 0.5) * 30;
-      const offsetY = (Math.random() - 0.5) * 20;
-      const rotation = (Math.random() - 0.5) * 14;
+      var col = i % cols;
+      var row = Math.floor(i / cols);
+      var baseX = (areaW / (cols + 1)) * (col + 1) - 65;
+      var baseY = 20 + row * 135;
+      var offsetX = (Math.random() - 0.5) * 10;
+      var offsetY = (Math.random() - 0.5) * 8;
+      var rotation = (Math.random() - 0.5) * 5;
 
       anime({
         targets: card,
