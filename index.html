@@ -103,7 +103,9 @@ body {
 /* ====== Card Scatter Area (Inspiration & Notes) ====== */
 .scatter-area {
   flex: 1; position: relative; min-height: 0; height: 0;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: none;
   padding: 22px 8px 24px;
 }
 .scatter-card {
@@ -592,9 +594,9 @@ body {
 	  gap: 12px; padding: 8px 4px;
 	}
 	.scatter-page-card {
-	  width: auto; padding: 14px 12px;
+	  width: auto; padding: 16px 14px;
 	  border-radius: 16px; color: #fff;
-	  font-size: 13px; font-weight: 600; line-height: 1.5;
+	  font-size: 16px; font-weight: 600; line-height: 1.5;
 	  box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
 	  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 1;
 	  word-break: break-word; min-height: 70px;
@@ -603,11 +605,7 @@ body {
 	  -webkit-tap-highlight-color: transparent;
 	}
 	.scatter-page-card:active { transform: scale(0.96); box-shadow: 0 6px 22px rgba(0,0,0,0.18); z-index: 10; }
-	/* 左列左倾，右列右倾 */
-	.scatter-page-card:nth-child(odd) { transform: rotate(-1.5deg); }
-	.scatter-page-card:nth-child(even) { transform: rotate(1.5deg); }
-	.scatter-page-card:nth-child(odd):active { transform: rotate(-1.5deg) scale(0.96); }
-	.scatter-page-card:nth-child(even):active { transform: rotate(1.5deg) scale(0.96); }
+
 	.scatter-page-card .page-card-text {
 	  flex: 1; overflow: hidden; display: -webkit-box;
 	  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -2254,7 +2252,8 @@ const UIController = {
       var selClass = self._selectMode ? ' select-mode' : '';
       var cbClass = self._selectMode ? ' visible' : '';
       var cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
-      html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';">';
+      var tilt = (Math.random() - 0.5) * 5; // -2.5° ~ +2.5°
+      html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';transform:rotate(' + tilt.toFixed(1) + 'deg);">';
       var stackDefId = isNotes ? 'default-n' : 'default-i';
       var g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(function(g) { return g.id === card.groupId; }) : null;
       var groupBadge2 = g2 ? '<span style="font-size:9px;opacity:0.8;display:block;margin-bottom:3px;">' + g2.icon + ' ' + g2.name + '</span>' : '';
@@ -2841,146 +2840,46 @@ const UIController = {
 
   // ---- Drawing ----
   drawInspiration() {
-    const allCards = CardManager.getInspirationCards();
-    const currentGroup = this._currentInspGroup;
-    const cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
+    var allCards = CardManager.getInspirationCards();
+    var currentGroup = this._currentInspGroup;
+    var cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
     if (cards.length === 0) {
       this.showFloatingText(currentGroup !== 'default-i' ? '这个分组里还没有灵感~ 🫙' : '罐头还是空的，先添加一些灵感吧~ 🫙');
       AudioEngine.click();
       return;
     }
-
-    AudioEngine.shuffle();
+    AudioEngine.ding();
     VibrationEngine.shuffleVibe();
-
-    // 堆叠模式：弹窗展示抽到的卡片
-    if (cards.length > STACK_THRESHOLD) {
-      const randomCard = cards[Math.floor(Math.random() * cards.length)];
-      setTimeout(() => {
-        AudioEngine.ding();
-        this._showDrawOverlay(randomCard);
-      }, 150);
-      return;
-    }
-
-    const cardEls = document.querySelectorAll('#scatterArea .scatter-card');
-    const area = document.getElementById('scatterArea');
-    const areaRect = area.getBoundingClientRect();
-    const areaW = areaRect.width || 350;
-    const areaH = areaRect.height || 400;
-
-    cardEls.forEach((el, i) => {
-      const randX = 10 + Math.random() * (areaW - 150);
-      const randY = 10 + Math.random() * (areaH - 120);
-      const randRot = (Math.random() - 0.5) * 45;
-
-      anime({
-        targets: el,
-        left: randX + 'px',
-        top: randY + 'px',
-        rotate: randRot + 'deg',
-        scale: 1,
-        duration: 400 + Math.random() * 300,
-        easing: 'easeInOutQuad',
-        delay: i * 30,
-      });
-    });
-
-    setTimeout(() => {
-      const randomIdx = Math.floor(Math.random() * cards.length);
-      const randomCard = cards[randomIdx];
-      const targetEl = document.querySelector(`#scatterArea .scatter-card[data-id="${randomCard.id}"]`);
-      if (targetEl) {
-        this.selectCard(randomCard.id, targetEl, 'inspiration');
-        AudioEngine.ding();
-      }
-    }, 800);
+    var randomCard = cards[Math.floor(Math.random() * cards.length)];
+    this._showDrawOverlay(randomCard);
   },
 
   drawNotes() {
-    const allCards = CardManager.getNotesCards();
-    const currentGroup = this._currentNotesGroup;
-    const cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
+    var allCards = CardManager.getNotesCards();
+    var currentGroup = this._currentNotesGroup;
+    var cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
     if (cards.length === 0) {
       this.showFloatingText(currentGroup !== 'default-n' ? '这个分组里还没有小纸条~ 💌' : '还没有小纸条，先写一张吧~ 💌');
       AudioEngine.click();
       return;
     }
-
-    AudioEngine.shuffle();
+    AudioEngine.ding();
     VibrationEngine.shuffleVibe();
-
-    // 堆叠模式：弹窗展示抽到的卡片
-    if (cards.length > STACK_THRESHOLD) {
-      const randomCard = cards[Math.floor(Math.random() * cards.length)];
-      setTimeout(() => {
-        AudioEngine.ding();
-        this._showDrawOverlay(randomCard);
-      }, 150);
-      return;
-    }
-
-    const cardEls = document.querySelectorAll('#notesScatterArea .scatter-card');
-    const area = document.getElementById('notesScatterArea');
-    const areaRect = area.getBoundingClientRect();
-    const areaW = areaRect.width || 350;
-    const areaH = areaRect.height || 400;
-
-    cardEls.forEach((el, i) => {
-      const randX = 10 + Math.random() * (areaW - 150);
-      const randY = 10 + Math.random() * (areaH - 120);
-      const randRot = (Math.random() - 0.5) * 45;
-
-      anime({
-        targets: el,
-        left: randX + 'px',
-        top: randY + 'px',
-        rotate: randRot + 'deg',
-        scale: 1,
-        duration: 400 + Math.random() * 300,
-        easing: 'easeInOutQuad',
-        delay: i * 30,
-      });
-    });
-
-    setTimeout(() => {
-      const randomIdx = Math.floor(Math.random() * cards.length);
-      const randomCard = cards[randomIdx];
-      const targetEl = document.querySelector(`#notesScatterArea .scatter-card[data-id="${randomCard.id}"]`);
-      if (targetEl) {
-        this.selectCard(randomCard.id, targetEl, 'notes');
-        AudioEngine.ding();
-      }
-    }, 800);
+    var randomCard = cards[Math.floor(Math.random() * cards.length)];
+    this._showDrawOverlay(randomCard);
   },
 
   drawAction() {
-    const cards = CardManager.getActionCards();
+    var cards = CardManager.getActionCards();
     if (cards.length === 0) {
       this.showFloatingText('还没有快乐开关，点击 + 添加吧~ 📸');
       AudioEngine.click();
       return;
     }
-
-    AudioEngine.shuffle();
+    AudioEngine.ding();
     VibrationEngine.shuffleVibe();
-
-    const actionCards = document.querySelectorAll('.action-card');
-    actionCards.forEach((el, i) => {
-      anime({
-        targets: el,
-        scale: [1, 1.05, 0.95, 1],
-        duration: 500,
-        delay: i * 40,
-        easing: 'easeInOutQuad',
-      });
-    });
-
-    setTimeout(() => {
-      const randomCard = cards[Math.floor(Math.random() * cards.length)];
-      this.openActionOverlay(randomCard);
-      AudioEngine.ding();
-    }, 600);
+    var randomCard = cards[Math.floor(Math.random() * cards.length)];
+    this.openActionOverlay(randomCard);
   },
 
   // ---- Draw Overlay (stack mode) ----
