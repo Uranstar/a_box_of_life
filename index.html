@@ -66,8 +66,7 @@ body {
 .view {
   width: 33.333%; height: 100%;
   position: relative; display: flex; flex-direction: column;
-  overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 /* ====== Pull-down Input Bar ====== */
@@ -103,7 +102,8 @@ body {
 
 /* ====== Card Scatter Area (Inspiration & Notes) ====== */
 .scatter-area {
-  flex: 1; position: relative; min-height: 300px;
+  flex: 1; position: relative; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding: 8px;
 }
 .scatter-card {
@@ -188,6 +188,7 @@ body {
 .center-btn-area {
   display: flex; justify-content: center; padding: 12px 0 16px;
   z-index: 5; position: relative;
+  flex-shrink: 0;
 }
 .big-draw-btn {
   padding: 18px 44px; border: none; border-radius: 50px;
@@ -640,19 +641,7 @@ body {
 	}
 
 	/* View with fixed bottom */
-	/* has-stack: 卡片区域可滚动，底部按钮固定 */
-	.view.has-stack {
-	  overflow-y: hidden;
-	}
-	.view.has-stack .scatter-area {
-	  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-	  min-height: 0;
-	}
-	.view.has-stack .center-btn-area {
-	  flex-shrink: 0;
-	  background: linear-gradient(0deg, rgba(255,248,240,0.98) 60%, rgba(255,248,240,0) 100%);
-	  padding: 16px 0 12px; z-index: 10;
-	}
+
 
 	/* ====== Draw Card Overlay ====== */
 	.draw-overlay {
@@ -765,7 +754,8 @@ body {
           <input type="text" id="pullInput" placeholder="输入一个灵感..." maxlength="80">
           <button id="pullSubmit">✓</button>
         </div>
-        <div class="select-toolbar" id="selectToolbar">
+          <div class="scatter-area" id="scatterArea">
+          <div class="select-toolbar" id="selectToolbar">
             <button class="st-all" id="selectAllBtn">全选</button>
             <span class="st-count" id="selectCount">已选 0 项</span>
             <button class="st-move" id="selectMoveBtn">📁 移动到...</button>
@@ -773,7 +763,6 @@ body {
             <button class="st-danger" id="deleteAllBtn" style="background:#e03131;">⚠️ 全部删除</button>
             <button class="st-cancel" id="cancelSelectBtn">取消</button>
           </div>
-          <div class="scatter-area" id="scatterArea">
           <div class="empty-state" id="inspirationEmpty">
             <div class="empty-emoji">🫙</div>
             <div class="empty-text">
@@ -812,7 +801,8 @@ body {
           <input type="text" id="notesPullInput" placeholder="写一张情绪小纸条..." maxlength="80">
           <button id="notesPullSubmit">✓</button>
         </div>
-        <div class="select-toolbar" id="notesSelectToolbar">
+          <div class="scatter-area" id="notesScatterArea">
+          <div class="select-toolbar" id="notesSelectToolbar">
             <button class="st-all" id="notesSelectAllBtn">全选</button>
             <span class="st-count" id="notesSelectCount">已选 0 项</span>
             <button class="st-move" id="notesSelectMoveBtn">📁 移动到...</button>
@@ -820,7 +810,6 @@ body {
             <button class="st-danger" id="notesDeleteAllBtn" style="background:#e03131;">⚠️ 全部删除</button>
             <button class="st-cancel" id="notesCancelSelectBtn">取消</button>
           </div>
-          <div class="scatter-area" id="notesScatterArea">
           <div class="empty-state" id="notesEmpty">
             <div class="empty-emoji">💌</div>
             <div class="empty-text">
@@ -2036,12 +2025,7 @@ const UIController = {
       return;
     }
 
-    // 散落模式：清除堆叠相关的 class
-    var viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
-    var viewEl2 = document.getElementById(viewId2);
-    if (viewEl2) viewEl2.classList.remove('has-stack');
-
-    // 暴力清空所有旧卡片和堆叠元素
+    // 清空所有旧卡片和堆叠元素
     area.querySelectorAll('.scatter-card, .stack-container, .stack-sentinel').forEach(function(el) { el.remove(); });
 
     if (cardsList.length === 0) {
@@ -2153,8 +2137,7 @@ const UIController = {
         }
       });
 
-      // Swipe up to dismiss
-      this.bindSwipe(el, card.id, isNotes ? 'notes' : 'inspiration');
+      // 上滑删除已禁用
 
       area.appendChild(el);
     });
@@ -2185,8 +2168,7 @@ const UIController = {
       return;
     }
 
-    // 切换为可滚动模式，固定底部按钮
-    if (view) view.classList.add('has-stack');
+    // 基础布局已固定按钮，无需额外 class
     area.style.minHeight = 'auto';
 
     // 初始化分页状态
@@ -4109,7 +4091,9 @@ const UIController = {
     let pullDetected = false;
 
     view.addEventListener('touchstart', (e) => {
-      if (view.scrollTop <= 0) {
+      // 只有滚动到顶部（scrollTop<=5）时才允许下拉添加
+      var scrollEl = view.querySelector('.scatter-area') || view;
+      if (scrollEl.scrollTop <= 5) {
         pullStartY = e.touches[0].clientY;
         pullDetected = true;
       }
