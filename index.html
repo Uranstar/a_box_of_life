@@ -104,7 +104,7 @@ body {
 .scatter-area {
   flex: 1; position: relative; min-height: 0; height: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 22px 8px 8px;
+  padding: 22px 8px 24px;
 }
 .scatter-card {
   position: absolute; width: 130px; padding: 16px 14px;
@@ -309,22 +309,16 @@ body {
   background: #FF6B6B; border-color: #FF6B6B; color: #fff;
 }
 .scatter-card.select-mode, .scatter-page-card.select-mode {
-  transform: none !important; opacity: 0.85;
+  transform: none !important;
 }
 
 /* ====== Immersive Animations ====== */
 /* Cards get subtle breathing via box-shadow pulse (avoids overriding inline transform) */
-.scatter-card {
-  animation: cardGlow 4s ease-in-out infinite;
-}
 @keyframes cardGlow {
   0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06); }
   50% { box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06), 0 0 18px rgba(255,140,105,0.15); }
 }
 
-.scatter-page-card {
-  animation: cardGlowPage 5s ease-in-out infinite;
-}
 @keyframes cardGlowPage {
   0%, 100% { box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06); }
   50% { box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06), 0 0 14px rgba(255,140,105,0.12); }
@@ -383,11 +377,9 @@ body {
   opacity: 0.5;
 }
 @keyframes dustDrift {
-  0% { transform: translateY(0) translateX(0); opacity: 0.4; }
-  25% { transform: translateY(-6px) translateX(3px); opacity: 0.7; }
-  50% { transform: translateY(-3px) translateX(-2px); opacity: 0.3; }
-  75% { transform: translateY(-9px) translateX(1px); opacity: 0.6; }
-  100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+  0% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(-6px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 0.3; }
 }
 
 /* ====== Bottom Nav ====== */
@@ -565,15 +557,7 @@ body {
 .view::-webkit-scrollbar { width: 0; }
 
 /* ====== Wobble Animation for Action Cards ====== */
-@keyframes wobble {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(0.3deg); }
-  75% { transform: rotate(-0.3deg); }
-}
-.action-card { animation: wobble 4s ease-in-out infinite; }
-.action-card:nth-child(2n) { animation-delay: 0.5s; }
-.action-card:nth-child(3n) { animation-delay: 1.2s; }
-.action-card:nth-child(5n) { animation-delay: 2.1s; }
+
 
 	/* ====== Delimiter Buttons ====== */
 	.delimiter-btn {
@@ -2276,7 +2260,7 @@ const UIController = {
     // 更新容器高度
     const totalCards = existingCards + batch.length;
     const totalRows = Math.ceil(totalCards / cols);
-    container.style.minHeight = (totalRows * rowHeight + 40) + 'px';
+    container.style.minHeight = (totalRows * rowHeight + 80) + 'px';
   },
 
   // 添加加载哨兵
