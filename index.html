@@ -1897,10 +1897,7 @@ const UIController = {
       this.showFloatingText('没有可删除的~');
       return;
     }
-    const isNotes = this.currentView === 'notes';
-    const currentGroup = isNotes ? this._currentNotesGroup : this._currentInspGroup;
-    const defaultId = isNotes ? 'default-n' : 'default-i';
-    const label = currentGroup === defaultId ? '全部' : '当前分组';
+    const label = curGroup === defaultGid ? '全部' : '当前分组';
     if (!confirm(`⚠️ 确定删除【${label}】的 ${cards.length} 个念头？此操作不可恢复！`)) return;
     const ids = cards.map(c => c.id);
     if (isNotes) {
