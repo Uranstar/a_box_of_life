@@ -1818,9 +1818,14 @@ const UIController = {
   // ---- Batch Select Mode ----
   toggleSelectMode() {
     this._selectMode = !this._selectMode;
-    if (!this._selectMode) this._selectedCards.clear();
-    const toolbars = document.querySelectorAll('.select-toolbar');
-    toolbars.forEach(tb => tb.classList.toggle('visible', this._selectMode));
+    if (!this._selectMode) {
+      this._selectedCards.clear();
+      // 重置全选按钮文字
+      document.getElementById('selectAllBtn').textContent = '全选';
+      document.getElementById('notesSelectAllBtn').textContent = '全选';
+    }
+    var toolbars = document.querySelectorAll('.select-toolbar');
+    toolbars.forEach(function(tb) { tb.classList.toggle('visible', this._selectMode); }.bind(this));
     if (!this._selectMode) this.renderCards();
     this._updateSelectCount();
   },
@@ -1831,14 +1836,30 @@ const UIController = {
     });
   },
 
-  _selectAllCards() {
+  _toggleSelectAll() {
     const areaId = this.currentView === 'notes' ? 'notesScatterArea' : 'scatterArea';
     const area = document.getElementById(areaId);
     const cards = area.querySelectorAll('.scatter-card, .scatter-page-card');
-    cards.forEach(card => {
-      const id = parseInt(card.dataset.id);
-      if (id) this._selectedCards.add(id);
-    });
+    var allSelected = true;
+    cards.forEach(function(card) {
+      var id = parseInt(card.dataset.id);
+      if (id && !this._selectedCards.has(id)) allSelected = false;
+    }.bind(this));
+    if (allSelected) {
+      // 取消全选
+      cards.forEach(function(card) {
+        var id = parseInt(card.dataset.id);
+        if (id) this._selectedCards.delete(id);
+      }.bind(this));
+      document.getElementById(this.currentView === 'notes' ? 'notesSelectAllBtn' : 'selectAllBtn').textContent = '全选';
+    } else {
+      // 全选
+      cards.forEach(function(card) {
+        var id = parseInt(card.dataset.id);
+        if (id) this._selectedCards.add(id);
+      }.bind(this));
+      document.getElementById(this.currentView === 'notes' ? 'notesSelectAllBtn' : 'selectAllBtn').textContent = '取消全选';
+    }
     this._updateSelectCount();
     this.renderCards();
   },
@@ -1968,7 +1989,7 @@ const UIController = {
     const cancelBtn = document.getElementById(cancelId);
     const deleteAllBtn = document.getElementById(deleteAllId);
 
-    if (allBtn) allBtn.addEventListener('click', () => this._selectAllCards());
+    if (allBtn) allBtn.addEventListener('click', () => this._toggleSelectAll());
     if (deleteBtn) deleteBtn.addEventListener('click', () => this.batchDelete());
     if (cancelBtn) cancelBtn.addEventListener('click', () => this.toggleSelectMode());
     if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAll());
@@ -2339,21 +2360,33 @@ const UIController = {
         AudioEngine.firework();
         VibrationEngine.dismissVibe();
         setTimeout(function() {
+          card.remove();
           if (isNotes) { CardManager.removeNote(id); }
           else { CardManager.removeInspiration(id); }
-          delete self._stackState[areaId];
-          self.renderAll();
-          area.scrollTop = Math.max(0, scrollTop - 60);
+          // 更新stackState，不移除整个state
+          var st = self._stackState[areaId];
+          if (st) {
+            st.allCards = st.allCards.filter(function(c) { return c.id !== id; });
+            st.offset = Math.min(st.offset, st.allCards.length);
+          }
           self.showFloatingText(isNotes ? '小纸条飘走了~ 💌' : '又排除了一个，酷！🫧');
         }, 300);
       } else if (actionType === 'stack-convert') {
         e.stopPropagation();
         AudioEngine.cardFly();
         VibrationEngine.confirmVibe();
+        card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        card.style.transform = 'scale(0.3)';
+        card.style.opacity = '0';
         var actionCard = isNotes ? CardManager.convertNoteToAction(id) : CardManager.convertToAction(id);
-        delete self._stackState[areaId];
-        self.renderAll();
-        area.scrollTop = Math.max(0, scrollTop - 60);
+        setTimeout(function() {
+          card.remove();
+          var st = self._stackState[areaId];
+          if (st) {
+            st.allCards = st.allCards.filter(function(c) { return c.id !== id; });
+            st.offset = Math.min(st.offset, st.allCards.length);
+          }
+        }, 300);
         if (actionCard) self.showFloatingText(isNotes ? '小纸条已转为动作开关！💌→🎬' : '已加入动作开关！✨');
       } else {
         const state = self._stackState[areaId];
