@@ -910,6 +910,7 @@ body {
 <div class="action-overlay" id="actionOverlay">
   <div class="action-card-large" id="actionCardLarge">
     <div class="big-emoji" id="actionEmoji"></div>
+    <img id="actionImage" src="" style="display:none; width:100%; border-radius:16px; margin-bottom:12px; max-height:50vh; object-fit:cover;">
     <div class="big-instruction" id="actionInstruction"></div>
     <button class="action-do-btn" id="actionDoBtn">▶ 立刻去做</button>
   </div>
@@ -1729,7 +1730,15 @@ const UIController = {
   // ---- Group Sidebar ----
   _renderGroupSidebar() {
     const container = document.getElementById('groupItems');
+    const sidebar = document.getElementById('groupSidebar');
     const isNotes = this.currentView === 'notes';
+    // 动作开关视图不需要分组
+    if (this.currentView === 'action') {
+      if (sidebar) sidebar.style.display = 'none';
+      if (container) container.innerHTML = '';
+      return;
+    }
+    if (sidebar) sidebar.style.display = '';
     const type = isNotes ? 'notes' : 'inspiration';
     const groups = CardManager.getGroups(type);
     const cards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
@@ -1739,7 +1748,7 @@ const UIController = {
       const count = g.id === defaultId
         ? cards.length
         : cards.filter(c => (c.groupId || defaultId) === g.id).length;
-      const isActive = this._getCurrentGroupId() === g.id;
+      const isActive = (isNotes ? this._currentNotesGroup : this._currentInspGroup) === g.id;
       return `<div class="group-item${isActive ? ' active' : ''}" data-group="${g.id}"
         title="${g.name} (${count})">
         <span class="group-icon">${g.icon}</span>
@@ -1787,7 +1796,8 @@ const UIController = {
     const type = this.currentView === 'notes' ? 'notes' : 'inspiration';
     const g = CardManager.getGroups(type).find(g => g.id === groupId);
     if (!g) return;
-    const isDefault = this._isDefaultGroup(groupId);
+    const defaultId = type === 'notes' ? 'default-n' : 'default-i';
+    const isDefault = groupId === defaultId;
     menu.innerHTML = `
       <button data-action="rename">✏️ 重命名</button>
       ${isDefault ? '' : '<button data-action="delete" class="danger">🗑 删除分组</button>'}
@@ -1807,7 +1817,9 @@ const UIController = {
       hide();
       if (confirm('确定删除该分组？卡片将移回"全部"。')) {
         CardManager.removeGroup(groupId);
-        if (this._getCurrentGroupId() === groupId) this._setCurrentGroup(this.currentView === 'notes' ? 'default-n' : 'default-i');
+        const defId = this.currentView === 'notes' ? 'default-n' : 'default-i';
+        const curGroup = this.currentView === 'notes' ? this._currentNotesGroup : this._currentInspGroup;
+        if (curGroup === groupId) this._setCurrentGroup(defId);
         this._renderGroupSidebar();
         this.renderCards();
       }
@@ -1876,14 +1888,19 @@ const UIController = {
   deleteAll() {
     const isNotes = this.currentView === 'notes';
     const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
-    const cards = this._getCurrentGroupId() === (isNotes ? 'default-n' : 'default-i')
+    const defaultGid = isNotes ? 'default-n' : 'default-i';
+    const curGroup = isNotes ? this._currentNotesGroup : this._currentInspGroup;
+    const cards = curGroup === defaultGid
       ? allCards
-      : allCards.filter(c => (c.groupId || (isNotes ? 'default-n' : 'default-i')) === this._getCurrentGroupId());
+      : allCards.filter(function(c) { return (c.groupId || defaultGid) === curGroup; });
     if (cards.length === 0) {
       this.showFloatingText('没有可删除的~');
       return;
     }
-    const label = this._isDefaultGroup(this._getCurrentGroupId()) ? '全部' : '当前分组';
+    const isNotes = this.currentView === 'notes';
+    const currentGroup = isNotes ? this._currentNotesGroup : this._currentInspGroup;
+    const defaultId = isNotes ? 'default-n' : 'default-i';
+    const label = currentGroup === defaultId ? '全部' : '当前分组';
     if (!confirm(`⚠️ 确定删除【${label}】的 ${cards.length} 个念头？此操作不可恢复！`)) return;
     const ids = cards.map(c => c.id);
     if (isNotes) {
@@ -2371,7 +2388,9 @@ const UIController = {
   _refreshArrangement(areaId) {
     const isNotes = areaId === 'notesScatterArea';
     const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || (isNotes ? 'default-n' : 'default-i')) === this._getCurrentGroupId());
+    const defaultId = isNotes ? 'default-n' : 'default-i';
+    const currentGroup = isNotes ? this._currentNotesGroup : this._currentInspGroup;
+    const cards = (currentGroup === defaultId) ? allCards : allCards.filter(function(c) { return (c.groupId || defaultId) === currentGroup; });
 
     if (cards.length === 0) {
       this.showFloatingText(isNotes ? '还没有小纸条，先写一张吧~ 💌' : '罐头还是空的，先添加一些灵感吧~ 🫙');
@@ -2395,10 +2414,12 @@ const UIController = {
     const isNotes = areaId === 'notesScatterArea';
     const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
     const self = this;
-    const cards = this._isDefaultGroup(this._getCurrentGroupId())
+    const defaultId = isNotes ? 'default-n' : 'default-i';
+    const currentGroup = isNotes ? this._currentNotesGroup : this._currentInspGroup;
+    const cards = (currentGroup === defaultId)
       ? [...allCards]
       : allCards.filter(function(c) {
-          return (c.groupId || (isNotes ? 'default-n' : 'default-i')) === self._getCurrentGroupId();
+          return (c.groupId || defaultId) === currentGroup;
         });
 
     if (cards.length === 0) return;
@@ -2693,7 +2714,17 @@ const UIController = {
     VibrationEngine.confirmVibe();
 
     const overlay = document.getElementById('actionOverlay');
-    document.getElementById('actionEmoji').textContent = this._getEmojiForText(card.text);
+    const emojiEl = document.getElementById('actionEmoji');
+    const imageEl = document.getElementById('actionImage');
+    if (card.imageDataUrl) {
+      emojiEl.style.display = 'none';
+      imageEl.style.display = 'block';
+      imageEl.src = card.imageDataUrl;
+    } else {
+      emojiEl.style.display = '';
+      imageEl.style.display = 'none';
+      emojiEl.textContent = this._getEmojiForText(card.text);
+    }
     document.getElementById('actionInstruction').textContent = card.instruction;
     overlay.classList.add('active');
     overlay._currentCard = card;
@@ -2709,6 +2740,9 @@ const UIController = {
   closeActionOverlay() {
     const overlay = document.getElementById('actionOverlay');
     overlay.classList.remove('active');
+    const imageEl = document.getElementById('actionImage');
+    if (imageEl) { imageEl.style.display = 'none'; imageEl.src = ''; }
+    document.getElementById('actionEmoji').style.display = '';
   },
 
   // ---- Action Card Management ----
@@ -2764,9 +2798,10 @@ const UIController = {
   // ---- Drawing ----
   drawInspiration() {
     const allCards = CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-i') === this._getCurrentGroupId());
+    const currentGroup = this._currentInspGroup;
+    const cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
     if (cards.length === 0) {
-      this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有灵感~ 🫙' : '罐头还是空的，先添加一些灵感吧~ 🫙');
+      this.showFloatingText(currentGroup !== 'default-i' ? '这个分组里还没有灵感~ 🫙' : '罐头还是空的，先添加一些灵感吧~ 🫙');
       AudioEngine.click();
       return;
     }
@@ -2820,9 +2855,10 @@ const UIController = {
 
   drawNotes() {
     const allCards = CardManager.getNotesCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-n') === this._getCurrentGroupId());
+    const currentGroup = this._currentNotesGroup;
+    const cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
     if (cards.length === 0) {
-      this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有小纸条~ 💌' : '还没有小纸条，先写一张吧~ 💌');
+      this.showFloatingText(currentGroup !== 'default-n' ? '这个分组里还没有小纸条~ 💌' : '还没有小纸条，先写一张吧~ 💌');
       AudioEngine.click();
       return;
     }
@@ -3035,7 +3071,7 @@ const UIController = {
   // ---- Adding Cards ----
   addInspirationByText(text) {
     if (!text.trim()) return;
-    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default-i';
+    const groupId = this._currentInspGroup !== 'default-i' ? this._currentInspGroup : 'default-i';
     const card = CardManager.addInspiration(text.trim(), undefined, groupId);
     this._renderGroupSidebar();
     this.renderAll();
@@ -3060,7 +3096,7 @@ const UIController = {
 
   addNoteByText(text) {
     if (!text.trim()) return;
-    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default-n';
+    const groupId = this._currentNotesGroup !== 'default-n' ? this._currentNotesGroup : 'default-n';
     const card = CardManager.addNote(text.trim(), undefined, groupId);
     this._renderGroupSidebar();
     this.renderAll();
