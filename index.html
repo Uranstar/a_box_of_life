@@ -1790,12 +1790,17 @@ const UIController = {
   },
 
   selectGroup(groupId) {
-    // 清除选中状态（不触发渲染），再切换分组
+    // 清除选中状态
     this.selectedCardId = null;
     this.selectedCardView = null;
     this._setCurrentGroup(groupId);
     this._renderGroupSidebar();
-    this.renderCards();
+    // 直接用 groupId 渲染，不依赖状态变量
+    if (this.currentView === 'notes') {
+      this._renderNotesCardsForGroup(groupId);
+    } else {
+      this._renderInspCardsForGroup(groupId);
+    }
   },
 
   _showGroupContextMenu(e, groupId) {
@@ -2002,6 +2007,19 @@ const UIController = {
     this.updateEmptyStates();
   },
 
+  // 直接按 groupId 渲染（不依赖 _currentInspGroup 状态）
+  _renderInspCardsForGroup(groupId) {
+    var allCards = CardManager.getInspirationCards();
+    var cards = (groupId === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === groupId; });
+    this.renderScatterCards('scatterArea', cards, null, 'inspirationEmpty');
+  },
+
+  _renderNotesCardsForGroup(groupId) {
+    var allCards = CardManager.getNotesCards();
+    var cards = (groupId === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === groupId; });
+    this.renderScatterCards('notesScatterArea', cards, null, 'notesEmpty');
+  },
+
   renderCards() {
     this.renderInspirationCards();
     this.renderNotesCards();
@@ -2009,8 +2027,8 @@ const UIController = {
   },
 
   renderScatterCards(areaId, cards, selectedCardId, emptyId) {
-    const area = document.getElementById(areaId);
-    const cardsList = cards;
+    var area = document.getElementById(areaId);
+    var cardsList = cards;
 
     // 卡片数量超过阈值 → 切换为紧凑堆叠布局
     if (cardsList.length > STACK_THRESHOLD) {
@@ -2019,12 +2037,12 @@ const UIController = {
     }
 
     // 散落模式：清除堆叠相关的 class
-    const viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
-    const viewEl2 = document.getElementById(viewId2);
+    var viewId2 = areaId === 'notesScatterArea' ? 'notesView' : 'inspirationView';
+    var viewEl2 = document.getElementById(viewId2);
     if (viewEl2) viewEl2.classList.remove('has-stack');
 
-    // Remove existing cards, keep empty state
-    area.querySelectorAll('.scatter-card').forEach(el => el.remove());
+    // 暴力清空所有旧卡片和堆叠元素
+    area.querySelectorAll('.scatter-card, .stack-container, .stack-sentinel').forEach(function(el) { el.remove(); });
 
     if (cardsList.length === 0) {
       area.style.minHeight = '300px';
@@ -2458,16 +2476,16 @@ const UIController = {
   },
 
   renderInspirationCards() {
-    const allCards = CardManager.getInspirationCards();
-    const currentGroup = this._currentInspGroup;
-    const cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
+    var allCards = CardManager.getInspirationCards();
+    var currentGroup = this._currentInspGroup;
+    var cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
     this.renderScatterCards('scatterArea', cards, this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
   },
 
   renderNotesCards() {
-    const allCards = CardManager.getNotesCards();
-    const currentGroup = this._currentNotesGroup;
-    const cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
+    var allCards = CardManager.getNotesCards();
+    var currentGroup = this._currentNotesGroup;
+    var cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
     this.renderScatterCards('notesScatterArea', cards, this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
   },
 
