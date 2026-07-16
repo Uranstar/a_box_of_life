@@ -210,11 +210,11 @@ body {
 
 /* ====== Group Sidebar ====== */
 .group-sidebar {
-  width: 52px; flex-shrink: 0;
+  width: 95px; flex-shrink: 0;
   background: rgba(255,248,240,0.95);
   border-right: 1px solid rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
-  align-items: center; padding: 6px 2px;
+  align-items: stretch; padding: 6px 3px;
   overflow-y: auto; gap: 2px;
   z-index: 12; transition: width 0.25s ease;
 }
@@ -226,23 +226,22 @@ body {
 }
 .group-item {
   width: 100%; display: flex; align-items: center;
-  gap: 6px; padding: 8px 6px; border-radius: 10px;
+  gap: 4px; padding: 8px 3px; border-radius: 10px;
   cursor: pointer; transition: background 0.15s;
-  font-size: 11px; color: #8B7355; position: relative;
-  justify-content: center;
+  font-size: 10px; color: #8B7355; position: relative;
+  justify-content: flex-start;
 }
 .group-sidebar.expanded .group-item { justify-content: flex-start; }
 .group-item .group-icon { font-size: 17px; flex-shrink: 0; }
 .group-item .group-name {
-  display: none; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; font-size: 11px; font-weight: 500;
+  display: inline; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; font-size: 10px; font-weight: 500;
+  max-width: 55px;
 }
-.group-sidebar.expanded .group-item .group-name { display: inline; }
 .group-item .group-count {
-  display: none; font-size: 10px; color: #b8a59a; margin-left: auto;
-  background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 8px;
+  display: inline; font-size: 9px; color: #b8a59a; margin-left: auto;
+  background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 8px;
 }
-.group-sidebar.expanded .group-item .group-count { display: inline; }
 
 .group-item.active {
   background: rgba(255,140,105,0.15);
@@ -641,11 +640,16 @@ body {
 	}
 
 	/* View with fixed bottom */
+	/* has-stack: 卡片区域可滚动，底部按钮固定 */
 	.view.has-stack {
-	  overflow-y: auto; -webkit-overflow-scrolling: touch;
+	  overflow-y: hidden;
+	}
+	.view.has-stack .scatter-area {
+	  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+	  min-height: 0;
 	}
 	.view.has-stack .center-btn-area {
-	  position: sticky; bottom: 0;
+	  flex-shrink: 0;
 	  background: linear-gradient(0deg, rgba(255,248,240,0.98) 60%, rgba(255,248,240,0) 100%);
 	  padding: 16px 0 12px; z-index: 10;
 	}
@@ -776,12 +780,20 @@ body {
             🎲 抽一个灵感
           </button>
           <button id="shuffleBtn" title="刷新排列"
-            style="margin-left: 12px; width: 48px; height: 48px; border-radius: 50%;
+            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
                    border: 2px solid rgba(255,140,105,0.35); background: rgba(255,140,105,0.08);
                    color: #FF8C69; font-size: 18px; cursor: pointer;
                    transition: transform 0.15s, background 0.2s;
                    display: flex; align-items: center; justify-content: center;">
             🔄
+          </button>
+          <button id="inspManageBtn" title="管理"
+            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid rgba(255,107,107,0.3); background: rgba(255,107,107,0.06);
+                   color: #FF6B6B; font-size: 18px; cursor: pointer;
+                   transition: transform 0.15s, background 0.2s;
+                   display: flex; align-items: center; justify-content: center;">
+            🗑
           </button>
         </div>
       </div>
@@ -815,12 +827,20 @@ body {
             🎲 抽一张小纸条
           </button>
           <button id="notesShuffleBtn" title="刷新排列"
-            style="margin-left: 12px; width: 48px; height: 48px; border-radius: 50%;
+            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
                    border: 2px solid rgba(218,119,242,0.35); background: rgba(218,119,242,0.08);
                    color: #DA77F2; font-size: 18px; cursor: pointer;
                    transition: transform 0.15s, background 0.2s;
                    display: flex; align-items: center; justify-content: center;">
             🔄
+          </button>
+          <button id="notesManageBtn" title="管理"
+            style="margin-left: 8px; width: 48px; height: 48px; border-radius: 50%;
+                   border: 2px solid rgba(255,107,107,0.3); background: rgba(255,107,107,0.06);
+                   color: #FF6B6B; font-size: 18px; cursor: pointer;
+                   transition: transform 0.15s, background 0.2s;
+                   display: flex; align-items: center; justify-content: center;">
+            🗑
           </button>
         </div>
       </div>
@@ -1740,17 +1760,9 @@ const UIController = {
   },
 
   selectGroup(groupId) {
-    // 如果有选中的卡片，点击分组 → 移动卡片到该分组
-    if (this.selectedCardId && !this._isDefaultGroup(groupId)) {
-      const type = this.selectedCardView === 'notes' ? 'notes' : 'inspiration';
-      CardManager.moveCardsToGroup([this.selectedCardId], type, groupId);
-      const g = CardManager.getGroups(type).find(g => g.id === groupId);
-      this.showFloatingText('已移动到 ' + (g ? g.name : '分组') + '！📁');
+    // 先取消选中，再切换分组
+    if (this.selectedCardId) {
       this.deselectCard();
-      this._setCurrentGroup(groupId);
-      this._renderGroupSidebar();
-      this.renderCards();
-      return;
     }
     this._setCurrentGroup(groupId);
     this._renderGroupSidebar();
@@ -3703,6 +3715,25 @@ const UIController = {
     });
     document.getElementById('notesShuffleBtn').addEventListener('click', () => {
       this._refreshArrangement('notesScatterArea');
+    });
+    // Manage buttons - quick access to batch delete
+    document.getElementById('inspManageBtn').addEventListener('click', () => {
+      if (!this._selectMode) {
+        this.toggleSelectMode();
+        this._selectAllCards();
+      } else {
+        this.batchDelete();
+      }
+      AudioEngine.click();
+    });
+    document.getElementById('notesManageBtn').addEventListener('click', () => {
+      if (!this._selectMode) {
+        this.toggleSelectMode();
+        this._selectAllCards();
+      } else {
+        this.batchDelete();
+      }
+      AudioEngine.click();
     });
 
     // Group Add button
