@@ -1655,17 +1655,24 @@ const UIController = {
   },
 
   _setCurrentGroup(groupId) {
-    if (this.currentView === 'notes') {
+    // 根据分组本身的type来决定存到哪个变量，不依赖this.currentView
+    if (groupId === 'default-n') {
       this._currentNotesGroup = groupId;
-    } else {
+    } else if (groupId === 'default-i') {
       this._currentInspGroup = groupId;
+    } else {
+      const g = CardManager.getGroups().find(function(g) { return g.id === groupId; });
+      if (g && g.type === 'notes') {
+        this._currentNotesGroup = groupId;
+      } else {
+        this._currentInspGroup = groupId;
+      }
     }
   },
 
   _isDefaultGroup(groupId) {
     if (!groupId) return true;
-    if (this.currentView === 'notes') return groupId === 'default-n';
-    return groupId === 'default-i';
+    return groupId === 'default-i' || groupId === 'default-n';
   },
 
   init() {
@@ -1757,23 +1764,29 @@ const UIController = {
       </div>`;
     }).join('');
 
-    // 绑定点击事件
-    container.querySelectorAll('.group-item').forEach(item => {
-      item.addEventListener('click', () => this.selectGroup(item.dataset.group));
-      item.addEventListener('contextmenu', (e) => {
+    // 事件委托：统一在容器上处理（iOS兼容性更好）
+    var self = this;
+    container.onclick = function(e) {
+      var item = e.target.closest('.group-item');
+      if (item) self.selectGroup(item.dataset.group);
+    };
+    container.oncontextmenu = function(e) {
+      var item = e.target.closest('.group-item');
+      if (item) {
         e.preventDefault();
-        this._showGroupContextMenu(e, item.dataset.group);
-      });
-      // 长按
-      let timer;
-      item.addEventListener('touchstart', () => {
-        timer = setTimeout(() => {
-          this._showGroupContextMenu({ clientX: item.getBoundingClientRect().left + 40, clientY: item.getBoundingClientRect().bottom }, item.dataset.group);
-        }, 600);
-      });
-      item.addEventListener('touchend', () => clearTimeout(timer));
-      item.addEventListener('touchmove', () => clearTimeout(timer));
-    });
+        self._showGroupContextMenu(e, item.dataset.group);
+      }
+    };
+    var longTimer;
+    container.ontouchstart = function(e) {
+      var item = e.target.closest('.group-item');
+      if (!item) return;
+      longTimer = setTimeout(function() {
+        self._showGroupContextMenu({ clientX: item.getBoundingClientRect().left + 40, clientY: item.getBoundingClientRect().bottom }, item.dataset.group);
+      }, 600);
+    };
+    container.ontouchend = function() { clearTimeout(longTimer); };
+    container.ontouchmove = function() { clearTimeout(longTimer); };
   },
 
   selectGroup(groupId) {
