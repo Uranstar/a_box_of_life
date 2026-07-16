@@ -659,8 +659,9 @@ body {
 	  transform: scale(0.9); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 	.draw-overlay.active .draw-overlay-card { transform: scale(1); }
+	#drawOverlayText { cursor: pointer; user-select: text; -webkit-user-select: text; }
 	.draw-overlay-label {
-	  font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 20px;
+	  font-size: 15px; color: #b8a59a; margin-bottom: 20px;
 	}
 	.draw-overlay-actions {
 	  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px;
@@ -669,21 +670,19 @@ body {
 	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 600;
 	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
 	}
-	.draw-overlay-dismiss { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); color: #fff; }
-	.draw-overlay-dismiss:active { background: rgba(255,255,255,0.3); }
-	.draw-overlay-edit { border-color: rgba(255,211,59,0.5); background: rgba(255,211,59,0.15); color: #FFD43B; }
-	.draw-overlay-edit:active { background: rgba(255,211,59,0.3); }
-	.draw-overlay-convert { border-color: rgba(56,178,172,0.5); background: rgba(56,178,172,0.15); color: #38B2AC; }
-	.draw-overlay-convert:active { background: rgba(56,178,172,0.3); }
-	.draw-overlay-delete { border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.2); color: #FF6B6B; }
-	.draw-overlay-delete:active { background: rgba(255,107,107,0.4); }
+	.draw-overlay-edit { border-color: #f0c040; background: #fffbf0; color: #c79100; }
+	.draw-overlay-edit:active { background: #fef3d0; }
+	.draw-overlay-convert { border-color: #38B2AC; background: #f0faf9; color: #38B2AC; }
+	.draw-overlay-convert:active { background: #d5f2f0; }
+	.draw-overlay-delete { border-color: #FF6B6B; background: #fff0f0; color: #FF6B6B; }
+	.draw-overlay-delete:active { background: #ffe0e0; }
 	.draw-overlay-draw-again {
 	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 700;
 	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
-	  border-color: rgba(255,211,59,0.6); background: rgba(255,211,59,0.2); color: #FFD43B;
+	  border-color: #FF8C69; background: #fff5f0; color: #FF8C69;
 	  grid-column: 1 / -1; text-align: center;
 	}
-	.draw-overlay-draw-again:active { background: rgba(255,211,59,0.4); }
+	.draw-overlay-draw-again:active { background: #ffe8dc; }
 
 	/* ====== Review Overlay (逐个回顾) ====== */
 	.review-overlay {
@@ -1022,7 +1021,7 @@ body {
     <div class="review-progress" id="reviewProgress"></div>
     <div class="review-actions">
       <button class="review-btn bingo-btn" id="reviewBingoBtn">✅ Bingo</button>
-      <button class="review-btn convert-btn" id="reviewConvertBtn">🎬 转动作</button>
+      <button class="review-btn convert-btn" id="reviewConvertBtn">🎬 加入动作</button>
       <button class="review-btn skip-btn" id="reviewSkipBtn">⏭ 跳过</button>
       <button class="review-btn delete-btn" id="reviewDeleteBtn">🗑 删除</button>
     </div>
@@ -1036,9 +1035,8 @@ body {
     <div class="draw-overlay-label">🎲 抽到了！</div>
     <div id="drawOverlayText"></div>
     <div class="draw-overlay-actions">
-      <button class="draw-overlay-dismiss" id="drawOverlayDismiss">放回去</button>
       <button class="draw-overlay-edit" id="drawOverlayEdit">✏️ 编辑</button>
-      <button class="draw-overlay-convert" id="drawOverlayConvert">🤏 转动作</button>
+      <button class="draw-overlay-convert" id="drawOverlayConvert">🎬 加入动作</button>
       <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
       <button class="draw-overlay-draw-again" id="drawOverlayDrawAgain" style="grid-column: 1 / -1;">🎲 再抽一张</button>
     </div>
@@ -1949,19 +1947,35 @@ const UIController = {
 
   // 单卡片移动分组选择器
   _showMoveGroupPicker(cardId, type) {
-    const groups = CardManager.getGroups(type);
-    const names = groups.map((g, i) => `${i + 1}. ${g.icon} ${g.name}`).join('\n');
-    const choice = prompt('移动到哪个分组？（输入编号）\n\n0. 取消\n' + names);
-    if (choice && choice !== '0') {
-      const idx = parseInt(choice) - 1;
-      if (idx >= 0 && idx < groups.length) {
-        const ids = [cardId];
-        CardManager.moveCardsToGroup(ids, type, groups[idx].id);
-        this.renderAll();
-        this._renderGroupSidebar();
-        this.showFloatingText('已移动到 ' + groups[idx].name + '！📁');
-      }
-    }
+    var self = this;
+    var groups = CardManager.getGroups(type);
+    // 创建分组选择弹窗
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    var list = document.createElement('div');
+    list.style.cssText = 'background:#fff;border-radius:20px;padding:16px;width:85%;max-width:300px;max-height:60vh;overflow-y:auto;';
+    list.innerHTML = '<h3 style="text-align:center;color:#4A3728;margin-bottom:12px;">📁 移动到分组</h3>';
+    groups.forEach(function(g) {
+      var btn = document.createElement('button');
+      btn.textContent = g.icon + ' ' + g.name;
+      btn.style.cssText = 'display:block;width:100%;padding:12px;margin:4px 0;border:2px solid #f0e8e0;border-radius:14px;background:#fff;font-size:15px;cursor:pointer;text-align:left;font-family:inherit;';
+      btn.onclick = function() {
+        CardManager.moveCardsToGroup([cardId], type, g.id);
+        self.renderAll();
+        self._renderGroupSidebar();
+        self.showFloatingText('已移动到 ' + g.name + '！📁');
+        modal.remove();
+      };
+      list.appendChild(btn);
+    });
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.style.cssText = 'display:block;width:100%;padding:12px;margin:8px 0 0;border:none;border-radius:14px;background:#f0e8e0;color:#8B7355;font-size:15px;cursor:pointer;font-family:inherit;';
+    cancelBtn.onclick = function() { modal.remove(); };
+    list.appendChild(cancelBtn);
+    modal.appendChild(list);
+    document.body.appendChild(modal);
   },
 
   _bindSelectToolbar(allId, moveId, deleteId, cancelId, deleteAllId) {
@@ -1977,16 +1991,32 @@ const UIController = {
     if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAll());
     if (moveBtn) moveBtn.addEventListener('click', () => {
       if (this._selectedCards.size === 0) return;
-      const mvgtype = this.currentView === 'notes' ? 'notes' : 'inspiration';
-      const groups = CardManager.getGroups(mvgtype);
-      const names = groups.map((g, i) => `${i + 1}. ${g.name}`).join('\n');
-      const choice = prompt('选择目标分组（输入编号）：\n' + names);
-      if (choice) {
-        const idx = parseInt(choice) - 1;
-        if (idx >= 0 && idx < groups.length) {
-          this.batchMoveToGroup(groups[idx].id);
-        }
-      }
+      var mvgtype = this.currentView === 'notes' ? 'notes' : 'inspiration';
+      var groups = CardManager.getGroups(mvgtype);
+      var self = this;
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+      var list = document.createElement('div');
+      list.style.cssText = 'background:#fff;border-radius:20px;padding:16px;width:85%;max-width:300px;max-height:60vh;overflow-y:auto;';
+      list.innerHTML = '<h3 style="text-align:center;color:#4A3728;margin-bottom:12px;">📁 移动到分组</h3>';
+      groups.forEach(function(g) {
+        var btn = document.createElement('button');
+        btn.textContent = g.icon + ' ' + g.name;
+        btn.style.cssText = 'display:block;width:100%;padding:12px;margin:4px 0;border:2px solid #f0e8e0;border-radius:14px;background:#fff;font-size:15px;cursor:pointer;text-align:left;font-family:inherit;';
+        btn.onclick = function() {
+          self.batchMoveToGroup(g.id);
+          modal.remove();
+        };
+        list.appendChild(btn);
+      });
+      var cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '取消';
+      cancelBtn.style.cssText = 'display:block;width:100%;padding:12px;margin:8px 0 0;border:none;border-radius:14px;background:#f0e8e0;color:#8B7355;font-size:15px;cursor:pointer;font-family:inherit;';
+      cancelBtn.onclick = function() { modal.remove(); };
+      list.appendChild(cancelBtn);
+      modal.appendChild(list);
+      document.body.appendChild(modal);
     });
   },
 
@@ -2078,7 +2108,7 @@ const UIController = {
         <div class="card-actions">
           <button class="card-action-btn" data-action="edit" title="编辑">✏️</button>
           <button class="card-action-btn" data-action="move-group" title="移动分组">📁</button>
-          <button class="card-action-btn" data-action="convert" title="转为动作">🤏</button>
+          <button class="card-action-btn" data-action="convert" title="加入动作">🎬</button>
           <button class="card-action-btn" data-action="dismiss" title="划掉">✕</button>
         </div>
       `;
@@ -2310,9 +2340,11 @@ const UIController = {
         }
       }
 
+      var scrollTop = area.scrollTop;
       if (actionType === 'stack-edit') {
         e.stopPropagation();
         self.editCardText(id, isNotes ? 'notes' : 'inspiration');
+        area.scrollTop = scrollTop;
       } else if (actionType === 'stack-move-group') {
         e.stopPropagation();
         self._showMoveGroupPicker(id, isNotes ? 'notes' : 'inspiration');
@@ -2334,7 +2366,7 @@ const UIController = {
         e.stopPropagation();
         AudioEngine.cardFly();
         VibrationEngine.confirmVibe();
-        const actionCard = isNotes ? CardManager.convertNoteToAction(id) : CardManager.convertToAction(id);
+        var actionCard = isNotes ? CardManager.convertNoteToAction(id) : CardManager.convertToAction(id);
         delete self._stackState[areaId];
         self.renderAll();
         if (actionCard) self.showFloatingText(isNotes ? '小纸条已转为动作开关！💌→🎬' : '已加入动作开关！✨');
@@ -2949,12 +2981,27 @@ const UIController = {
 
   // ---- Draw Overlay (stack mode) ----
   _showDrawOverlay(card) {
-    const overlay = document.getElementById('drawOverlay');
-    const cardEl = document.getElementById('drawOverlayCard');
-    const textEl = document.getElementById('drawOverlayText');
+    var overlay = document.getElementById('drawOverlay');
+    var cardEl = document.getElementById('drawOverlayCard');
+    var textEl = document.getElementById('drawOverlayText');
 
-    cardEl.style.backgroundColor = card.color || '#FF8C69';
+    // 白色卡片 + 彩色顶部条纹
+    cardEl.style.backgroundColor = '#fff';
+    cardEl.style.color = '#4A3728';
+    cardEl.style.borderTop = '6px solid ' + (card.color || '#FF8C69');
     textEl.textContent = card.text;
+    // 双击文字编辑
+    var self = this;
+    textEl.ondblclick = function() {
+      var newText = prompt('编辑文字：', textEl.textContent);
+      if (newText && newText.trim()) {
+        card.text = newText.trim();
+        textEl.textContent = newText.trim();
+        CardManager.save();
+        self.renderAll();
+        self.showFloatingText('已更新！✏️');
+      }
+    };
     overlay.classList.add('active');
     overlay._currentCard = card;
   },
@@ -3718,11 +3765,7 @@ const UIController = {
       return { card, isNote };
     };
 
-    // Draw overlay (stack mode card reveal)
-    document.getElementById('drawOverlayDismiss').addEventListener('click', () => {
-      this._closeDrawOverlay();
-      AudioEngine.click();
-    });
+    // Draw overlay - click outside to close
     document.getElementById('drawOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
         this._closeDrawOverlay();
@@ -4059,24 +4102,7 @@ const UIController = {
       }
     });
 
-    // Swipe left/right on the views wrapper for view switching
-    let swipeStartX = 0;
-    const viewsWrapper = document.querySelector('.views-wrapper');
-    viewsWrapper.addEventListener('touchstart', (e) => {
-      swipeStartX = e.touches[0].clientX;
-    }, { passive: true });
-    viewsWrapper.addEventListener('touchend', (e) => {
-      const dx = e.changedTouches[0].clientX - swipeStartX;
-      const viewOrder = ['inspiration', 'notes', 'action'];
-      const currentIdx = viewOrder.indexOf(this.currentView);
-      if (Math.abs(dx) > 60) {
-        if (dx < 0 && currentIdx < 2) {
-          this.switchView(viewOrder[currentIdx + 1]);
-        } else if (dx > 0 && currentIdx > 0) {
-          this.switchView(viewOrder[currentIdx - 1]);
-        }
-      }
-    });
+
 
     // Initial setup
     document.getElementById('addActionBtn').style.display = 'none';
