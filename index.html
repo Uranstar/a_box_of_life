@@ -647,7 +647,9 @@ body {
 	  transform: scale(0.9); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 	.draw-overlay.active .draw-overlay-card { transform: scale(1); }
-	#drawOverlayText { cursor: pointer; user-select: text; -webkit-user-select: text; }
+	#drawOverlayText { cursor: pointer; user-select: text; -webkit-user-select: text;
+		  max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+		  word-break: break-word; padding: 4px 0; }
 	.draw-overlay-label {
 	  font-size: 15px; color: #b8a59a; margin-bottom: 20px;
 	}
