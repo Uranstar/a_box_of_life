@@ -2359,6 +2359,7 @@ const UIController = {
           else { CardManager.removeInspiration(id); }
           delete self._stackState[areaId];
           self.renderAll();
+          area.scrollTop = Math.max(0, scrollTop - 60);
           self.showFloatingText(isNotes ? '小纸条飘走了~ 💌' : '又排除了一个，酷！🫧');
         }, 300);
       } else if (actionType === 'stack-convert') {
@@ -2368,6 +2369,7 @@ const UIController = {
         var actionCard = isNotes ? CardManager.convertNoteToAction(id) : CardManager.convertToAction(id);
         delete self._stackState[areaId];
         self.renderAll();
+        area.scrollTop = Math.max(0, scrollTop - 60);
         if (actionCard) self.showFloatingText(isNotes ? '小纸条已转为动作开关！💌→🎬' : '已加入动作开关！✨');
       } else {
         const state = self._stackState[areaId];
@@ -3812,8 +3814,13 @@ const UIController = {
         this.renderAll();
         this.showFloatingText('已删除！🗑️');
       }
-      this._closeDrawOverlay();
       AudioEngine.firework();
+      // 自动抽下一张
+      if (this.currentView === 'notes') {
+        this.drawNotes();
+      } else {
+        this.drawInspiration();
+      }
     });
     // Draw overlay — 再抽一张
     document.getElementById('drawOverlayDrawAgain').addEventListener('click', () => {
