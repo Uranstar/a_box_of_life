@@ -1032,10 +1032,9 @@ body {
 <!-- Draw Card Overlay -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-overlay-card" id="drawOverlayCard">
-    <div class="draw-overlay-label">🎲 抽到了！</div>
+    <div class="draw-overlay-label">🎲 抽到了！<span style="font-size:11px;opacity:0.6;">（双击文字编辑）</span></div>
     <div id="drawOverlayText"></div>
     <div class="draw-overlay-actions">
-      <button class="draw-overlay-edit" id="drawOverlayEdit">✏️ 编辑</button>
       <button class="draw-overlay-convert" id="drawOverlayConvert">🎬 加入动作</button>
       <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
       <button class="draw-overlay-draw-again" id="drawOverlayDrawAgain" style="grid-column: 1 / -1;">🎲 再抽一张</button>
@@ -2990,16 +2989,30 @@ const UIController = {
     cardEl.style.color = '#4A3728';
     cardEl.style.borderTop = '6px solid ' + (card.color || '#FF8C69');
     textEl.textContent = card.text;
-    // 双击文字编辑
+    // 双击文字编辑（iOS兼容：手动检测双击）
     var self = this;
-    textEl.ondblclick = function() {
-      var newText = prompt('编辑文字：', textEl.textContent);
-      if (newText && newText.trim()) {
-        card.text = newText.trim();
-        textEl.textContent = newText.trim();
-        CardManager.save();
-        self.renderAll();
-        self.showFloatingText('已更新！✏️');
+    var tapTimer = null;
+    textEl.onclick = function(e) {
+      e.stopPropagation();
+      if (tapTimer) {
+        // 第二次点击 → 编辑
+        clearTimeout(tapTimer);
+        tapTimer = null;
+        var newText = prompt('编辑文字：', textEl.textContent);
+        if (newText && newText.trim()) {
+          card.text = newText.trim();
+          textEl.textContent = newText.trim();
+          CardManager.save();
+          self.renderAll();
+          self.showFloatingText('已更新！✏️');
+        }
+      } else {
+        // 第一次点击 → 等待第二次
+        textEl.style.opacity = '0.6';
+        tapTimer = setTimeout(function() {
+          textEl.style.opacity = '1';
+          tapTimer = null;
+        }, 400);
       }
     };
     overlay.classList.add('active');
@@ -3772,15 +3785,7 @@ const UIController = {
         AudioEngine.click();
       }
     });
-    // Draw overlay — 编辑
-    document.getElementById('drawOverlayEdit').addEventListener('click', () => {
-      const info = _getDrawCardType();
-      if (info) {
-        this.editCardText(info.card.id, info.isNote ? 'notes' : 'inspiration');
-        this._closeDrawOverlay();
-      }
-    });
-    // Draw overlay — 转动作
+    // Draw overlay — 加入动作
     document.getElementById('drawOverlayConvert').addEventListener('click', () => {
       const info = _getDrawCardType();
       if (info) {
