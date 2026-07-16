@@ -1768,6 +1768,7 @@ const UIController = {
     this.selectedCardId = null;
     this.selectedCardView = null;
     this._setCurrentGroup(groupId);
+    AudioEngine.click();
     this._renderGroupSidebar();
     // 直接用 groupId 渲染，不依赖状态变量
     if (this.currentView === 'notes') {
@@ -1828,6 +1829,7 @@ const UIController = {
       document.getElementById('selectAllBtn').textContent = '全选';
       document.getElementById('notesSelectAllBtn').textContent = '全选';
     }
+    AudioEngine.click();
     var toolbars = document.querySelectorAll('.select-toolbar');
     toolbars.forEach(function(tb) { tb.classList.toggle('visible', this._selectMode); }.bind(this));
     if (!this._selectMode) this.renderCards();
@@ -1865,6 +1867,7 @@ const UIController = {
       document.getElementById(this.currentView === 'notes' ? 'notesSelectAllBtn' : 'selectAllBtn').textContent = '取消全选';
     }
     this._updateSelectCount();
+    AudioEngine.click();
     this.renderCards();
   },
 
@@ -1941,13 +1944,14 @@ const UIController = {
 
   // 编辑卡片文字
   editCardText(cardId, type) {
-    const cards = type === 'notes' ? CardManager.getNotesCards() : CardManager.getInspirationCards();
-    const card = cards.find(c => c.id === cardId);
+    var cards = type === 'notes' ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    var card = cards.find(function(c) { return c.id === cardId; });
     if (!card) return;
-    const newText = prompt('编辑文字：', card.text);
+    var newText = prompt('编辑文字：', card.text);
     if (newText && newText.trim()) {
       card.text = newText.trim();
       CardManager.save();
+      AudioEngine.ding();
       this.renderAll();
       this.showFloatingText('已更新！✏️');
     }
@@ -1969,6 +1973,7 @@ const UIController = {
       btn.textContent = g.icon + ' ' + g.name;
       btn.style.cssText = 'display:block;width:100%;padding:12px;margin:4px 0;border:2px solid #f0e8e0;border-radius:14px;background:#fff;font-size:15px;cursor:pointer;text-align:left;font-family:inherit;';
       btn.onclick = function() {
+        AudioEngine.ding();
         CardManager.moveCardsToGroup([cardId], type, g.id);
         self.renderAll();
         self._renderGroupSidebar();
@@ -2013,6 +2018,7 @@ const UIController = {
         btn.textContent = g.icon + ' ' + g.name;
         btn.style.cssText = 'display:block;width:100%;padding:12px;margin:4px 0;border:2px solid #f0e8e0;border-radius:14px;background:#fff;font-size:15px;cursor:pointer;text-align:left;font-family:inherit;';
         btn.onclick = function() {
+          AudioEngine.ding();
           self.batchMoveToGroup(g.id);
           modal.remove();
         };
@@ -3717,6 +3723,7 @@ const UIController = {
     // Draw overlay — 再抽一张
     document.getElementById('drawOverlayDrawAgain').addEventListener('click', () => {
       this._closeDrawOverlay();
+      AudioEngine.click();
       if (this.currentView === 'notes') {
         this.drawNotes();
       } else {
