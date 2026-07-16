@@ -946,6 +946,12 @@ body {
       <button class="delimiter-btn" data-d=",">, 逗号</button>
       <button class="delimiter-btn" data-d="custom">✎ 自定义</button>
     </div>
+    <!-- 分组选择 -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;" id="batchGroupSelector">
+      <span style="font-size:12px;color:#b8a59a;">分组：</span>
+      <select id="batchGroupSelect" style="flex:1;padding:7px 10px;border-radius:12px;border:2px solid #f0e8e0;font-size:13px;outline:none;color:#4A3728;background:#FFF8F0;font-family:inherit;"></select>
+      <button id="batchGroupAddBtn" style="padding:6px 10px;border-radius:12px;border:2px dashed #d0c8c0;background:none;color:#b8a59a;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;">+ 新建</button>
+    </div>
     <div class="batch-preview-text" id="batchPreview"></div>
     <textarea id="batchTextarea" rows="8" placeholder="试试用水彩画星空&#10;折一只会跳的纸青蛙&#10;在窗台上种一盆薄荷"
       style="width:100%;border-radius:14px;border:2px solid #f0e8e0;padding:12px;font-size:15px;resize:none;outline:none;font-family:inherit;color:#4A3728;background:#FFF8F0;"></textarea>
@@ -972,6 +978,12 @@ body {
       <button class="delimiter-btn" data-d=" ">␣ 空格</button>
       <button class="delimiter-btn" data-d=",">, 逗号</button>
       <button class="delimiter-btn" data-d="custom">✎ 自定义</button>
+    </div>
+    <!-- 分组选择 -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;" id="notesBatchGroupSelector">
+      <span style="font-size:12px;color:#b8a59a;">分组：</span>
+      <select id="notesBatchGroupSelect" style="flex:1;padding:7px 10px;border-radius:12px;border:2px solid #f0e8e0;font-size:13px;outline:none;color:#4A3728;background:#FFF8F0;font-family:inherit;"></select>
+      <button id="notesBatchGroupAddBtn" style="padding:6px 10px;border-radius:12px;border:2px dashed #d0c8c0;background:none;color:#b8a59a;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;">+ 新建</button>
     </div>
     <div class="batch-preview-text notes-preview" id="notesBatchPreview"></div>
     <textarea id="notesBatchTextarea" rows="8" placeholder="今天阳光很好，心情也跟着亮了起来&#10;有点焦虑，但没关系，慢慢来&#10;感谢朋友今天的一句鼓励"
@@ -2034,7 +2046,9 @@ const UIController = {
           this._toggleCardSelection(card.id);
           return;
         }
-        this.selectCard(card.id, el, isNotes ? 'notes' : 'inspiration');
+        AudioEngine.pop();
+        VibrationEngine.cardTapVibe();
+        this._showDrawOverlay(card);
       });
 
       // Long press → enter select mode
@@ -2287,7 +2301,7 @@ const UIController = {
         if (selected) {
           AudioEngine.pop();
           VibrationEngine.cardTapVibe();
-          self.showFloatingText(selected.text);
+          self._showDrawOverlay(selected);
         }
       }
     });
@@ -2338,7 +2352,7 @@ const UIController = {
   _refreshArrangement(areaId) {
     const isNotes = areaId === 'notesScatterArea';
     const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || (isNotes ? 'default-n' : 'default-i')) === this._getCurrentGroupId());
 
     if (cards.length === 0) {
       this.showFloatingText(isNotes ? '还没有小纸条，先写一张吧~ 💌' : '罐头还是空的，先添加一些灵感吧~ 🫙');
@@ -2356,45 +2370,52 @@ const UIController = {
     }
   },
 
-  // 重新随机排列当前已加载卡片的位置（摇一摇 / 手动刷新）
+  // 重新随机排列所有卡片（摇一摇 / 手动刷新）
+  // 堆叠模式下：打乱全部卡片顺序后重新渲染，让不同卡片有机会出现在首页
   _shuffleStackCards(areaId) {
-    const area = document.getElementById(areaId);
-    const cards = area.querySelectorAll('.scatter-page-card');
+    const isNotes = areaId === 'notesScatterArea';
+    const allCards = isNotes ? CardManager.getNotesCards() : CardManager.getInspirationCards();
+    const self = this;
+    const cards = this._isDefaultGroup(this._getCurrentGroupId())
+      ? [...allCards]
+      : allCards.filter(function(c) {
+          return (c.groupId || (isNotes ? 'default-n' : 'default-i')) === self._getCurrentGroupId();
+        });
+
     if (cards.length === 0) return;
 
-    const areaW = area.getBoundingClientRect().width || 340;
-    const cols = Math.max(2, Math.floor(areaW / 145));
-    const rowHeight = 100;
+    // Fisher-Yates 洗牌
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
 
-    cards.forEach(function(card, i) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const baseX = (areaW / (cols + 1)) * (col + 1) - 65;
-      const baseY = 10 + row * rowHeight;
-      const offsetX = (Math.random() - 0.5) * 30;
-      const offsetY = (Math.random() - 0.5) * 20;
-      const rotation = (Math.random() - 0.5) * 14;
+    // 清除堆叠状态并重新渲染
+    delete this._stackState[areaId];
+    const area = document.getElementById(areaId);
+    area.querySelectorAll('.scatter-card, .stack-container, .stack-sentinel').forEach(function(el) { el.remove(); });
 
-      anime({
-        targets: card,
-        left: (baseX + offsetX) + 'px',
-        top: (baseY + offsetY) + 'px',
-        rotate: rotation + 'deg',
-        duration: 400 + Math.random() * 250,
-        easing: 'easeOutElastic(1, .5)',
-      });
-    });
+    this._renderStackCards(areaId, cards, isNotes ? 'notesEmpty' : 'inspirationEmpty');
+
+    // 按钮旋转反馈
+    const btnId = isNotes ? 'notesShuffleBtn' : 'shuffleBtn';
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.style.transform = 'rotate(360deg)';
+      btn.style.transition = 'transform 0.6s ease-in-out';
+      setTimeout(function() { btn.style.transform = 'rotate(0deg)'; }, 600);
+    }
   },
 
   renderInspirationCards() {
     const allCards = CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-i') === this._getCurrentGroupId());
     this.renderScatterCards('scatterArea', cards, this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
   },
 
   renderNotesCards() {
     const allCards = CardManager.getNotesCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-n') === this._getCurrentGroupId());
     this.renderScatterCards('notesScatterArea', cards, this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
   },
 
@@ -2722,7 +2743,7 @@ const UIController = {
   // ---- Drawing ----
   drawInspiration() {
     const allCards = CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-i') === this._getCurrentGroupId());
     if (cards.length === 0) {
       this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有灵感~ 🫙' : '罐头还是空的，先添加一些灵感吧~ 🫙');
       AudioEngine.click();
@@ -2778,7 +2799,7 @@ const UIController = {
 
   drawNotes() {
     const allCards = CardManager.getNotesCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default') === this._getCurrentGroupId());
+    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-n') === this._getCurrentGroupId());
     if (cards.length === 0) {
       this.showFloatingText(!this._isDefaultGroup(this._getCurrentGroupId()) ? '这个分组里还没有小纸条~ 💌' : '还没有小纸条，先写一张吧~ 💌');
       AudioEngine.click();
@@ -2993,7 +3014,7 @@ const UIController = {
   // ---- Adding Cards ----
   addInspirationByText(text) {
     if (!text.trim()) return;
-    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default';
+    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default-i';
     const card = CardManager.addInspiration(text.trim(), undefined, groupId);
     this._renderGroupSidebar();
     this.renderAll();
@@ -3018,7 +3039,7 @@ const UIController = {
 
   addNoteByText(text) {
     if (!text.trim()) return;
-    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default';
+    const groupId = !this._isDefaultGroup(this._getCurrentGroupId()) ? this._getCurrentGroupId() : 'default-n';
     const card = CardManager.addNote(text.trim(), undefined, groupId);
     this._renderGroupSidebar();
     this.renderAll();
@@ -3211,6 +3232,67 @@ const UIController = {
     });
   },
 
+  // ---- Batch Group Helpers ----
+  _populateBatchGroupSelect(type) {
+    const selectId = type === 'notes' ? 'notesBatchGroupSelect' : 'batchGroupSelect';
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const groups = CardManager.getGroups(type);
+    const currentGroupId = type === 'notes' ? this._currentNotesGroup : this._currentInspGroup;
+    select.innerHTML = groups.map(function(g) {
+      const selected = g.id === currentGroupId ? ' selected' : '';
+      return '<option value="' + g.id + '"' + selected + '>' + g.icon + ' ' + g.name + '</option>';
+    }).join('');
+  },
+
+  _addInspirationToGroup(text, groupId) {
+    if (!text.trim()) return;
+    const effectiveGroupId = groupId || 'default-i';
+    const card = CardManager.addInspiration(text.trim(), undefined, effectiveGroupId);
+    this._renderGroupSidebar();
+    this.renderAll();
+    AudioEngine.ding();
+    VibrationEngine.cardTapVibe();
+    setTimeout(() => {
+      const el = document.querySelector('#scatterArea .scatter-card[data-id="' + card.id + '"]');
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.3) rotate(0deg)';
+        anime({
+          targets: el,
+          opacity: 1,
+          scale: 1,
+          duration: 500,
+          easing: 'easeOutElastic(1, .6)',
+        });
+      }
+    }, 50);
+  },
+
+  _addNoteToGroup(text, groupId) {
+    if (!text.trim()) return;
+    const effectiveGroupId = groupId || 'default-n';
+    const card = CardManager.addNote(text.trim(), undefined, effectiveGroupId);
+    this._renderGroupSidebar();
+    this.renderAll();
+    AudioEngine.ding();
+    VibrationEngine.cardTapVibe();
+    setTimeout(() => {
+      const el = document.querySelector('#notesScatterArea .scatter-card[data-id="' + card.id + '"]');
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.3) rotate(0deg)';
+        anime({
+          targets: el,
+          opacity: 1,
+          scale: 1,
+          duration: 500,
+          easing: 'easeOutElastic(1, .6)',
+        });
+      }
+    }, 50);
+  },
+
   // ---- Batch Modals ----
   openBatchModal() {
     const modal = document.getElementById('batchModal');
@@ -3219,6 +3301,7 @@ const UIController = {
     this._batchDelimiter = '\n';
     this._resetDelimiterUI('batch');
     this._updateBatchPreview('batch');
+    this._populateBatchGroupSelect('inspiration');
     document.getElementById('batchTextarea').focus();
     AudioEngine.click();
     anime({
@@ -3241,15 +3324,19 @@ const UIController = {
       return;
     }
 
+    const groupSelect = document.getElementById('batchGroupSelect');
+    const targetGroupId = groupSelect ? groupSelect.value : 'default-i';
+    const self = this;
     lines.forEach((line, i) => {
       setTimeout(() => {
-        this.addInspirationByText(line);
+        self._addInspirationToGroup(line, targetGroupId);
       }, i * 80);
     });
 
     AudioEngine.success();
     VibrationEngine.confirmVibe();
-    this.showFloatingText(`已加入 ${lines.length} 个灵感！✨`);
+    const g = CardManager.getGroups('inspiration').find(function(g) { return g.id === targetGroupId; });
+    this.showFloatingText('已加入 ' + lines.length + ' 个灵感到 ' + (g ? g.name : '') + '！✨');
     this.closeBatchModal();
   },
 
@@ -3261,6 +3348,7 @@ const UIController = {
     this._notesBatchDelimiter = '\n';
     this._resetDelimiterUI('notes');
     this._updateBatchPreview('notes');
+    this._populateBatchGroupSelect('notes');
     document.getElementById('notesBatchTextarea').focus();
     AudioEngine.click();
     anime({
@@ -3283,15 +3371,19 @@ const UIController = {
       return;
     }
 
+    const groupSelect = document.getElementById('notesBatchGroupSelect');
+    const targetGroupId = groupSelect ? groupSelect.value : 'default-n';
+    const self = this;
     lines.forEach((line, i) => {
       setTimeout(() => {
-        this.addNoteByText(line);
+        self._addNoteToGroup(line, targetGroupId);
       }, i * 80);
     });
 
     AudioEngine.success();
     VibrationEngine.confirmVibe();
-    this.showFloatingText(`已加入 ${lines.length} 张小纸条！💌`);
+    const g = CardManager.getGroups('notes').find(function(g) { return g.id === targetGroupId; });
+    this.showFloatingText('已加入 ' + lines.length + ' 张小纸条到 ' + (g ? g.name : '') + '！💌');
     this.closeNotesBatchModal();
   },
 
@@ -3718,6 +3810,30 @@ const UIController = {
     document.getElementById('batchClipboardBtn').addEventListener('click', () => {
       this._readClipboard('batch');
     });
+    // Batch modal group selector - add group button
+    document.getElementById('batchGroupAddBtn').addEventListener('click', () => {
+      const name = prompt('新建分组名称：');
+      if (!name || !name.trim()) return;
+      const icons = ['📌', '💼', '🏠', '🎨', '📚', '🎵', '🏃', '🍳', '✈️', '💡', '🌟', '🐱'];
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const g = CardManager.addGroup(name.trim(), icon, CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)], 'inspiration');
+      this._populateBatchGroupSelect('inspiration');
+      document.getElementById('batchGroupSelect').value = g.id;
+      this._renderGroupSidebar();
+      this.showFloatingText('已创建分组：' + name.trim());
+    });
+    document.getElementById('notesBatchGroupAddBtn').addEventListener('click', () => {
+      const name = prompt('新建分组名称：');
+      if (!name || !name.trim()) return;
+      const icons = ['📌', '💼', '🏠', '🎨', '📚', '🎵', '🏃', '🍳', '✈️', '💡', '🌟', '🐱'];
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const g = CardManager.addGroup(name.trim(), icon, NOTES_COLORS[Math.floor(Math.random() * NOTES_COLORS.length)], 'notes');
+      this._populateBatchGroupSelect('notes');
+      document.getElementById('notesBatchGroupSelect').value = g.id;
+      this._renderGroupSidebar();
+      this.showFloatingText('已创建分组：' + name.trim());
+    });
+
     document.getElementById('batchModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) this.closeBatchModal();
     });
