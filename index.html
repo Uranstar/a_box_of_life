@@ -688,6 +688,13 @@ body {
 	.draw-overlay-convert:active { background: rgba(56,178,172,0.3); }
 	.draw-overlay-delete { border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.2); color: #FF6B6B; }
 	.draw-overlay-delete:active { background: rgba(255,107,107,0.4); }
+	.draw-overlay-draw-again {
+	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 700;
+	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
+	  border-color: rgba(255,211,59,0.6); background: rgba(255,211,59,0.2); color: #FFD43B;
+	  grid-column: 1 / -1; text-align: center;
+	}
+	.draw-overlay-draw-again:active { background: rgba(255,211,59,0.4); }
 
 	/* ====== Review Overlay (逐个回顾) ====== */
 	.review-overlay {
@@ -1043,6 +1050,7 @@ body {
       <button class="draw-overlay-edit" id="drawOverlayEdit">✏️ 编辑</button>
       <button class="draw-overlay-convert" id="drawOverlayConvert">🤏 转动作</button>
       <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
+      <button class="draw-overlay-draw-again" id="drawOverlayDrawAgain" style="grid-column: 1 / -1;">🎲 再抽一张</button>
     </div>
   </div>
 </div>
@@ -1760,10 +1768,9 @@ const UIController = {
   },
 
   selectGroup(groupId) {
-    // 先取消选中，再切换分组
-    if (this.selectedCardId) {
-      this.deselectCard();
-    }
+    // 清除选中状态（不触发渲染），再切换分组
+    this.selectedCardId = null;
+    this.selectedCardView = null;
     this._setCurrentGroup(groupId);
     this._renderGroupSidebar();
     this.renderCards();
@@ -3709,6 +3716,15 @@ const UIController = {
       }
       this._closeDrawOverlay();
       AudioEngine.firework();
+    });
+    // Draw overlay — 再抽一张
+    document.getElementById('drawOverlayDrawAgain').addEventListener('click', () => {
+      this._closeDrawOverlay();
+      if (this.currentView === 'notes') {
+        this.drawNotes();
+      } else {
+        this.drawInspiration();
+      }
     });
 
     // Shuffle buttons (works in both scatter and stack modes)
