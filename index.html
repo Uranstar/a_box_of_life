@@ -588,20 +588,26 @@ body {
 
 	/* ====== Stack Card Layout (for many cards) ====== */
 	.stack-container {
-	  position: relative; padding: 4px 6px;
+	  display: grid; grid-template-columns: 1fr 1fr;
+	  gap: 12px; padding: 8px 4px;
 	}
 	.scatter-page-card {
-	  position: absolute; width: 130px; padding: 14px 12px;
+	  width: auto; padding: 14px 12px;
 	  border-radius: 16px; color: #fff;
 	  font-size: 13px; font-weight: 600; line-height: 1.5;
 	  box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
-	  cursor: pointer; transition: box-shadow 0.2s; z-index: 1;
-	  word-break: break-word; min-height: 60px;
+	  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 1;
+	  word-break: break-word; min-height: 70px;
 	  display: flex; flex-direction: column;
 	  justify-content: space-between;
 	  -webkit-tap-highlight-color: transparent;
 	}
-	.scatter-page-card:active { box-shadow: 0 6px 22px rgba(0,0,0,0.18); z-index: 10; }
+	.scatter-page-card:active { transform: scale(0.96); box-shadow: 0 6px 22px rgba(0,0,0,0.18); z-index: 10; }
+	/* 左列左倾，右列右倾 */
+	.scatter-page-card:nth-child(odd) { transform: rotate(-1.5deg); }
+	.scatter-page-card:nth-child(even) { transform: rotate(1.5deg); }
+	.scatter-page-card:nth-child(odd):active { transform: rotate(-1.5deg) scale(0.96); }
+	.scatter-page-card:nth-child(even):active { transform: rotate(1.5deg) scale(0.96); }
 	.scatter-page-card .page-card-text {
 	  flex: 1; overflow: hidden; display: -webkit-box;
 	  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -2229,62 +2235,40 @@ const UIController = {
   },
 
   // 追加一批卡片到容器（散落布局，绝对定位 + 随机偏移）
-  _appendStackBatch(area, areaId, batch) {
+    _appendStackBatch(area, areaId, batch) {
     if (batch.length === 0) return;
-    const state = this._stackState[areaId];
-    const isNotes = state ? state.isNotes : false;
-    const self = this;
+    var state = this._stackState[areaId];
+    var isNotes = state ? state.isNotes : false;
+    var self = this;
 
-    let container = area.querySelector('.stack-container');
+    var container = area.querySelector('.stack-container');
     if (!container) {
       container = document.createElement('div');
       container.className = 'stack-container';
       area.appendChild(container);
     }
 
-    // 计算当前已加载总数，用于确定新卡片的基础行列位置
-    const existingCards = container.querySelectorAll('.scatter-page-card').length;
-    const areaW = area.getBoundingClientRect().width || 340;
-    const cols = Math.max(2, Math.floor(areaW / 150));
-    const rowHeight = 130;
-    var cardW = Math.min(130, Math.floor(areaW / cols) - 20);
-
     var html = '';
-    batch.forEach(function(card, idx) {
-      var globalIdx = existingCards + idx;
-      var col = globalIdx % cols;
-      var row = Math.floor(globalIdx / cols);
-      var baseX = (areaW / (cols + 1)) * (col + 1) - cardW / 2;
-      var baseY = 10 + row * rowHeight;
-      // 极小随机偏移，避免遮挡
-      var offsetX = (Math.random() - 0.5) * 6;
-      var offsetY = (Math.random() - 0.5) * 4;
-      var rotation = (Math.random() - 0.5) * 3;
-
+    batch.forEach(function(card) {
       var text = self.escapeHtml(card.text);
       var selClass = self._selectMode ? ' select-mode' : '';
       var cbClass = self._selectMode ? ' visible' : '';
       var cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
-      html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';left:' + (baseX + offsetX) + 'px;top:' + (baseY + offsetY) + 'px;transform:rotate(' + rotation + 'deg);">';
-      const stackDefId = isNotes ? 'default-n' : 'default-i';
-      const g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(g => g.id === card.groupId) : null;
-      const groupBadge2 = g2 ? '<span style="font-size:9px;opacity:0.8;display:block;margin-bottom:3px;">' + g2.icon + ' ' + g2.name + '</span>' : '';
+      html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';">';
+      var stackDefId = isNotes ? 'default-n' : 'default-i';
+      var g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(function(g) { return g.id === card.groupId; }) : null;
+      var groupBadge2 = g2 ? '<span style="font-size:9px;opacity:0.8;display:block;margin-bottom:3px;">' + g2.icon + ' ' + g2.name + '</span>' : '';
       html += '<div class="select-checkbox' + cbClass + cbChecked + '" data-id="' + card.id + '">✓</div>';
       html += groupBadge2 + '<span class="page-card-text">' + text + '</span>';
       html += '<div class="page-card-actions">';
       html += '<button class="page-card-btn" data-action="stack-edit" title="编辑">✏️</button>';
       html += '<button class="page-card-btn" data-action="stack-move-group" title="移动分组">📁</button>';
-      html += '<button class="page-card-btn" data-action="stack-convert" title="转为动作">🤏</button>';
+      html += '<button class="page-card-btn" data-action="stack-convert" title="加入动作">🎬</button>';
       html += '<button class="page-card-btn" data-action="stack-dismiss" title="删除">✕</button>';
       html += '</div></div>';
     });
     container.insertAdjacentHTML('beforeend', html);
-
-    // 更新容器高度
-    const totalCards = existingCards + batch.length;
-    const totalRows = Math.ceil(totalCards / cols);
-    container.style.minHeight = (totalRows * rowHeight + 80) + 'px';
-  },
+  },,
 
   // 添加加载哨兵
   _addStackSentinel(area, areaId) {
