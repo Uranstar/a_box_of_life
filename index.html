@@ -210,7 +210,7 @@ body {
 
 /* ====== Group Sidebar ====== */
 .group-sidebar {
-  width: 95px; flex-shrink: 0;
+  width: 82px; flex-shrink: 0;
   background: rgba(255,248,240,0.95);
   border-right: 1px solid rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
@@ -235,8 +235,8 @@ body {
 .group-item .group-icon { font-size: 17px; flex-shrink: 0; }
 .group-item .group-name {
   display: inline; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; font-size: 10px; font-weight: 500;
-  max-width: 55px;
+  text-overflow: ellipsis; font-size: 9px; font-weight: 500;
+  max-width: 45px;
 }
 .group-item .group-count {
   display: inline; font-size: 9px; color: #b8a59a; margin-left: auto;
@@ -663,21 +663,21 @@ body {
 	}
 	.draw-overlay.active { opacity: 1; pointer-events: auto; }
 	.draw-overlay-card {
-	  width: 75%; max-width: 300px; padding: 32px 24px;
-	  border-radius: 22px; color: #fff; text-align: center;
-	  font-size: 20px; font-weight: 700; line-height: 1.6;
-	  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+	  width: 88%; max-width: 380px; padding: 40px 28px;
+	  border-radius: 24px; color: #fff; text-align: center;
+	  font-size: 24px; font-weight: 700; line-height: 1.6;
+	  box-shadow: 0 24px 72px rgba(0,0,0,0.35);
 	  transform: scale(0.9); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 	.draw-overlay.active .draw-overlay-card { transform: scale(1); }
 	.draw-overlay-label {
-	  font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 16px;
+	  font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 20px;
 	}
 	.draw-overlay-actions {
-	  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;
+	  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px;
 	}
 	.draw-overlay-dismiss, .draw-overlay-edit, .draw-overlay-convert, .draw-overlay-delete {
-	  padding: 10px 16px; border-radius: 50px; font-size: 14px; font-weight: 600;
+	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 600;
 	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
 	}
 	.draw-overlay-dismiss { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); color: #fff; }
@@ -2421,13 +2421,15 @@ const UIController = {
 
   renderInspirationCards() {
     const allCards = CardManager.getInspirationCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-i') === this._getCurrentGroupId());
+    const currentGroup = this._currentInspGroup;
+    const cards = (currentGroup === 'default-i') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-i') === currentGroup; });
     this.renderScatterCards('scatterArea', cards, this.selectedCardView === 'inspiration' ? this.selectedCardId : null, 'inspirationEmpty');
   },
 
   renderNotesCards() {
     const allCards = CardManager.getNotesCards();
-    const cards = this._isDefaultGroup(this._getCurrentGroupId()) ? allCards : allCards.filter(c => (c.groupId || 'default-n') === this._getCurrentGroupId());
+    const currentGroup = this._currentNotesGroup;
+    const cards = (currentGroup === 'default-n') ? allCards : allCards.filter(function(c) { return (c.groupId || 'default-n') === currentGroup; });
     this.renderScatterCards('notesScatterArea', cards, this.selectedCardView === 'notes' ? this.selectedCardId : null, 'notesEmpty');
   },
 
