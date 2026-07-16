@@ -104,7 +104,7 @@ body {
 .scatter-area {
   flex: 1; position: relative; min-height: 0; height: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 8px;
+  padding: 22px 8px 8px;
 }
 .scatter-card {
   position: absolute; width: 130px; padding: 16px 14px;
@@ -211,13 +211,13 @@ body {
 
 /* ====== Group Sidebar ====== */
 .group-sidebar {
-  width: 82px; flex-shrink: 0;
+  width: 100px; min-width: 60px; max-width: 160px; flex-shrink: 0;
   background: rgba(255,248,240,0.95);
   border-right: 1px solid rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
   align-items: stretch; padding: 6px 3px;
   overflow-y: auto; gap: 2px;
-  z-index: 12; transition: width 0.25s ease;
+  z-index: 12; resize: horizontal;
 }
 .group-sidebar.expanded { width: 110px; }
 
@@ -227,17 +227,17 @@ body {
 }
 .group-item {
   width: 100%; display: flex; align-items: center;
-  gap: 4px; padding: 8px 3px; border-radius: 10px;
+  gap: 3px; padding: 7px 4px; border-radius: 10px;
   cursor: pointer; transition: background 0.15s;
-  font-size: 10px; color: #8B7355; position: relative;
+  font-size: 11px; color: #8B7355; position: relative;
   justify-content: flex-start;
 }
 .group-sidebar.expanded .group-item { justify-content: flex-start; }
 .group-item .group-icon { font-size: 17px; flex-shrink: 0; }
 .group-item .group-name {
   display: inline; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; font-size: 9px; font-weight: 500;
-  max-width: 45px;
+  text-overflow: ellipsis; font-size: 10px; font-weight: 500;
+  max-width: 60px;
 }
 .group-item .group-count {
   display: inline; font-size: 9px; color: #b8a59a; margin-left: auto;
@@ -1214,7 +1214,7 @@ const VibrationEngine = {
 // ============================================================
 //  CARD DATA MANAGER
 // ============================================================
-const STACK_THRESHOLD = 20; // 超过此数量切换为紧凑堆叠布局
+const STACK_THRESHOLD = 12; // 超过此数量切换为紧凑堆叠布局
 const CARD_COLORS = [
   '#FF6B6B', '#FFA94D', '#FFD43B', '#69DB7C',
   '#4DABF7', '#DA77F2', '#F783AC', '#63E6BE',
@@ -3192,22 +3192,28 @@ const UIController = {
 
   // 设置分隔符并更新 UI
   _setBatchDelimiter(delimiter, modalPrefix) {
+    var isNotes = modalPrefix === 'notes';
     if (delimiter === 'custom') {
-      const custom = prompt('请输入自定义分隔符（如 |、;、# 等）：', '');
+      var custom = prompt('请输入自定义分隔符（如 |、;、# 等）：', '');
       if (!custom) return;
       delimiter = custom;
     }
-    if (modalPrefix === 'notes') {
+    if (isNotes) {
       this._notesBatchDelimiter = delimiter;
     } else {
       this._batchDelimiter = delimiter;
     }
     // 更新按钮样式
-    const groupId = modalPrefix === 'notes' ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
-    const group = document.getElementById(groupId);
+    var groupId = isNotes ? 'notesBatchDelimiterGroup' : 'batchDelimiterGroup';
+    var group = document.getElementById(groupId);
     if (group) {
-      group.querySelectorAll('.delimiter-btn').forEach(btn => {
+      group.querySelectorAll('.delimiter-btn').forEach(function(btn) {
         btn.classList.remove('active', 'notes-active');
+        // 高亮当前分隔符对应的按钮
+        var btnDelim = btn.getAttribute('data-d');
+        if (btnDelim === delimiter || (btnDelim === 'custom' && delimiter !== '\n' && delimiter !== ' ' && delimiter !== ',')) {
+          btn.classList.add(isNotes ? 'notes-active' : 'active');
+        }
       });
     }
     this._updateBatchPreview(modalPrefix);
