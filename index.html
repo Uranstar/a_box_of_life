@@ -102,7 +102,7 @@ body {
 
 /* ====== Card Scatter Area (Inspiration & Notes) ====== */
 .scatter-area {
-  flex: 1; position: relative; min-height: 0;
+  flex: 1; position: relative; min-height: 0; height: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding: 8px;
 }
@@ -2163,12 +2163,10 @@ const UIController = {
 
     if (cards.length === 0) {
       area.style.minHeight = '300px';
-      if (view) view.classList.remove('has-stack');
       delete this._stackState[areaId];
       return;
     }
 
-    // 基础布局已固定按钮，无需额外 class
     area.style.minHeight = 'auto';
 
     // 初始化分页状态
