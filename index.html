@@ -594,9 +594,9 @@ body {
 	  gap: 12px; padding: 8px 4px;
 	}
 	.scatter-page-card {
-	  width: auto; padding: 16px 14px;
+	  width: auto; padding: 12px 10px;
 	  border-radius: 16px; color: #fff;
-	  font-size: 16px; font-weight: 600; line-height: 1.5;
+	  font-size: 14px; font-weight: 600; line-height: 1.5;
 	  box-shadow: 0 3px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
 	  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 1;
 	  word-break: break-word; min-height: 70px;
@@ -2252,7 +2252,7 @@ const UIController = {
       var selClass = self._selectMode ? ' select-mode' : '';
       var cbClass = self._selectMode ? ' visible' : '';
       var cbChecked = self._selectedCards.has(card.id) ? ' checked' : '';
-      var tilt = (Math.random() - 0.5) * 5; // -2.5° ~ +2.5°
+      var tilt = (Math.random() - 0.5) * 10; // -5° ~ +5°
       html += '<div class="scatter-page-card' + selClass + '" data-id="' + card.id + '" data-view="' + (isNotes ? 'notes' : 'inspiration') + '" style="background-color:' + card.color + ';transform:rotate(' + tilt.toFixed(1) + 'deg);">';
       var stackDefId = isNotes ? 'default-n' : 'default-i';
       var g2 = (card.groupId && card.groupId !== stackDefId) ? CardManager.getGroups().find(function(g) { return g.id === card.groupId; }) : null;
