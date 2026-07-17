@@ -662,6 +662,8 @@ body {
 	}
 	.draw-overlay-edit { border-color: #f0c040; background: #fffbf0; color: #c79100; }
 	.draw-overlay-edit:active { background: #fef3d0; }
+	.draw-overlay-move { border-color: #b8a59a; background: #f8f5f0; color: #8B7355; }
+	.draw-overlay-move:active { background: #f0e8e0; }
 	.draw-overlay-convert { border-color: #38B2AC; background: #f0faf9; color: #38B2AC; }
 	.draw-overlay-convert:active { background: #d5f2f0; }
 	.draw-overlay-delete { border-color: #FF6B6B; background: #fff0f0; color: #FF6B6B; }
@@ -1025,9 +1027,10 @@ body {
     <div class="draw-overlay-label">🎲 抽到了！<span style="font-size:11px;opacity:0.6;">（双击文字编辑）</span></div>
     <div id="drawOverlayText"></div>
     <div class="draw-overlay-actions">
+      <button class="draw-overlay-move" id="drawOverlayMove">📁 移动分组</button>
       <button class="draw-overlay-convert" id="drawOverlayConvert">🎬 加入动作</button>
-      <button class="draw-overlay-delete" id="drawOverlayDelete">🗑 删除</button>
       <button class="draw-overlay-draw-again" id="drawOverlayDrawAgain" style="grid-column: 1 / -1;">🎲 再抽一张</button>
+      <button class="draw-overlay-delete" id="drawOverlayDelete" style="grid-column: 1 / -1;">🗑 删除</button>
     </div>
   </div>
 </div>
@@ -3685,6 +3688,14 @@ const UIController = {
       if (e.target === e.currentTarget) {
         this._closeDrawOverlay();
         AudioEngine.click();
+      }
+    });
+    // Draw overlay — 移动分组
+    document.getElementById('drawOverlayMove').addEventListener('click', () => {
+      const info = _getDrawCardType();
+      if (info) {
+        this._closeDrawOverlay();
+        this._showMoveGroupPicker(info.card.id, info.isNote ? 'notes' : 'inspiration');
       }
     });
     // Draw overlay — 加入动作
