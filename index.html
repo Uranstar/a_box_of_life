@@ -656,7 +656,7 @@ body {
 	.draw-overlay-actions {
 	  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px;
 	}
-	.draw-overlay-dismiss, .draw-overlay-edit, .draw-overlay-convert, .draw-overlay-delete {
+	.draw-overlay-dismiss, .draw-overlay-move, .draw-overlay-convert, .draw-overlay-delete, .draw-overlay-draw-again {
 	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 600;
 	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
 	}
@@ -669,8 +669,7 @@ body {
 	.draw-overlay-delete { border-color: #FF6B6B; background: #fff0f0; color: #FF6B6B; }
 	.draw-overlay-delete:active { background: #ffe0e0; }
 	.draw-overlay-draw-again {
-	  padding: 12px 16px; border-radius: 50px; font-size: 15px; font-weight: 700;
-	  cursor: pointer; transition: background 0.2s; margin: 0; border: 2px solid;
+	  font-weight: 700;
 	  border-color: #FF8C69; background: #fff5f0; color: #FF8C69;
 	  grid-column: 1 / -1; text-align: center;
 	}
